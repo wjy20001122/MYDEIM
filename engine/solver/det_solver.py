@@ -61,8 +61,8 @@ class DetSolver(BaseSolver):
             )
             for k in test_stats:
                 best_stat['epoch'] = self.last_epoch
-                best_stat[k] = test_stats[k][0]
-                top1 = test_stats[k][0]
+                best_stat[k] = test_stats[k][1]
+                top1 = test_stats[k][1]
                 print(f'best_stat: {best_stat}')
 
         best_stat_print = best_stat.copy()
@@ -129,11 +129,11 @@ class DetSolver(BaseSolver):
                         self.writer.add_scalar(f'Test/{k}_{i}'.format(k), v, epoch)
 
                 if k in best_stat:
-                    best_stat['epoch'] = epoch if test_stats[k][0] > best_stat[k] else best_stat['epoch']
-                    best_stat[k] = max(best_stat[k], test_stats[k][0])
+                    best_stat['epoch'] = epoch if test_stats[k][1] > best_stat[k] else best_stat['epoch']
+                    best_stat[k] = max(best_stat[k], test_stats[k][1])
                 else:
                     best_stat['epoch'] = epoch
-                    best_stat[k] = test_stats[k][0]
+                    best_stat[k] = test_stats[k][1]
 
                 if best_stat[k] > top1:
                     best_stat_print['epoch'] = epoch
@@ -149,11 +149,11 @@ class DetSolver(BaseSolver):
 
                 if best_stat['epoch'] == epoch and self.output_dir:
                     if epoch >= self.train_dataloader.collate_fn.stop_epoch:
-                        if test_stats[k][0] > top1:
-                            top1 = test_stats[k][0]
+                        if test_stats[k][1] > top1:
+                            top1 = test_stats[k][1]
                             dist_utils.save_on_master(self.state_dict(), self.output_dir / 'best_stg2.pth')
                     else:
-                        top1 = max(test_stats[k][0], top1)
+                        top1 = max(test_stats[k][1], top1)
                         dist_utils.save_on_master(self.state_dict(), self.output_dir / 'best_stg1.pth')
 
                 elif epoch >= self.train_dataloader.collate_fn.stop_epoch:

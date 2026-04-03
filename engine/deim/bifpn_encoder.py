@@ -154,10 +154,12 @@ class SeparableConv(nn.Module):
 class BiFPNBlock(nn.Module):
     """
     单层BiFPN块，支持注意力机制
+    支持2级或3级特征融合
     """
-    def __init__(self, channels, act='silu', use_attention='cbam', attention_reduction=16):
+    def __init__(self, channels, act='silu', use_attention='cbam', attention_reduction=16, num_levels=2):
         super().__init__()
         self.use_attention = use_attention
+        self.num_levels = num_levels
         
         self.conv_down = nn.Sequential(
             nn.Conv2d(channels, channels, 3, 2, 1, bias=False),
@@ -165,30 +167,62 @@ class BiFPNBlock(nn.Module):
             get_activation(act)
         )
         
-        self.w1_p3 = WeightedFeatureFusion(2)
-        self.w1_p4 = WeightedFeatureFusion(2)
-        self.w2_p3 = WeightedFeatureFusion(3)
-        
-        self.fuse_p3 = SeparableConv(channels, channels, 3, 1, 1, act)
-        self.fuse_p4 = SeparableConv(channels, channels, 3, 1, 1, act)
-        
-        if use_attention == 'cbam':
-            self.attention_p3 = CBAM(channels, attention_reduction)
-            self.attention_p4 = CBAM(channels, attention_reduction)
-        elif use_attention == 'channel':
-            self.attention_p3 = ChannelAttention(channels, attention_reduction)
-            self.attention_p4 = ChannelAttention(channels, attention_reduction)
-        elif use_attention == 'eca':
-            self.attention_p3 = ECALayer(channels)
-            self.attention_p4 = ECALayer(channels)
-        elif use_attention == 'spatial':
-            self.attention_p3 = SpatialAttention()
-            self.attention_p4 = SpatialAttention()
+        if num_levels == 2:
+            self.w1_p3 = WeightedFeatureFusion(2)
+            self.w1_p4 = WeightedFeatureFusion(2)
+            self.w2_p3 = WeightedFeatureFusion(3)
+            
+            self.fuse_p3 = SeparableConv(channels, channels, 3, 1, 1, act)
+            self.fuse_p4 = SeparableConv(channels, channels, 3, 1, 1, act)
+            
+            if use_attention == 'cbam':
+                self.attention_p3 = CBAM(channels, attention_reduction)
+                self.attention_p4 = CBAM(channels, attention_reduction)
+            elif use_attention == 'channel':
+                self.attention_p3 = ChannelAttention(channels, attention_reduction)
+                self.attention_p4 = ChannelAttention(channels, attention_reduction)
+            elif use_attention == 'eca':
+                self.attention_p3 = ECALayer(channels)
+                self.attention_p4 = ECALayer(channels)
+            elif use_attention == 'spatial':
+                self.attention_p3 = SpatialAttention()
+                self.attention_p4 = SpatialAttention()
+            else:
+                self.attention_p3 = nn.Identity()
+                self.attention_p4 = nn.Identity()
         else:
-            self.attention_p3 = nn.Identity()
-            self.attention_p4 = nn.Identity()
+            self.w1_p3 = WeightedFeatureFusion(2)
+            self.w1_p4 = WeightedFeatureFusion(2)
+            self.w1_p5 = WeightedFeatureFusion(2)
+            self.w2_p3 = WeightedFeatureFusion(3)
+            self.w2_p4 = WeightedFeatureFusion(3)
+            
+            self.fuse_p3 = SeparableConv(channels, channels, 3, 1, 1, act)
+            self.fuse_p4 = SeparableConv(channels, channels, 3, 1, 1, act)
+            self.fuse_p5 = SeparableConv(channels, channels, 3, 1, 1, act)
+            
+            if use_attention == 'cbam':
+                self.attention_p3 = CBAM(channels, attention_reduction)
+                self.attention_p4 = CBAM(channels, attention_reduction)
+                self.attention_p5 = CBAM(channels, attention_reduction)
+            elif use_attention == 'channel':
+                self.attention_p3 = ChannelAttention(channels, attention_reduction)
+                self.attention_p4 = ChannelAttention(channels, attention_reduction)
+                self.attention_p5 = ChannelAttention(channels, attention_reduction)
+            elif use_attention == 'eca':
+                self.attention_p3 = ECALayer(channels)
+                self.attention_p4 = ECALayer(channels)
+                self.attention_p5 = ECALayer(channels)
+            elif use_attention == 'spatial':
+                self.attention_p3 = SpatialAttention()
+                self.attention_p4 = SpatialAttention()
+                self.attention_p5 = SpatialAttention()
+            else:
+                self.attention_p3 = nn.Identity()
+                self.attention_p4 = nn.Identity()
+                self.attention_p5 = nn.Identity()
     
-    def forward(self, p3, p4):
+    def forward_2level(self, p3, p4):
         p4_up = F.interpolate(p4, scale_factor=2, mode='nearest')
         p3_fused = self.w1_p3([p3, p4_up])
         p3_out = self.fuse_p3(p3_fused)
@@ -205,6 +239,35 @@ class BiFPNBlock(nn.Module):
         p3_final = self.attention_p3(p3_final)
         
         return p3_final, p4_out
+    
+    def forward_3level(self, p2, p3, p4):
+        p4_up = F.interpolate(p4, scale_factor=2, mode='nearest')
+        p3_fused = self.w1_p4([p3, p4_up])
+        p3_out = self.fuse_p4(p3_fused)
+        p3_out = self.attention_p4(p3_out)
+        
+        p3_up = F.interpolate(p3_out, scale_factor=2, mode='nearest')
+        p2_fused = self.w1_p3([p2, p3_up])
+        p2_out = self.fuse_p3(p2_fused)
+        p2_out = self.attention_p3(p2_out)
+        
+        p2_down = self.conv_down(p2_out)
+        p3_fused2 = self.w2_p3([p3, p3_out, p2_down])
+        p3_final = self.fuse_p3(p3_fused2)
+        p3_final = self.attention_p3(p3_final)
+        
+        p3_down = self.conv_down(p3_final)
+        p4_fused = self.w1_p5([p4, p3_down])
+        p4_final = self.fuse_p5(p4_fused)
+        p4_final = self.attention_p5(p4_final)
+        
+        return p2_out, p3_final, p4_final
+    
+    def forward(self, *feats):
+        if self.num_levels == 2:
+            return self.forward_2level(feats[0], feats[1])
+        else:
+            return self.forward_3level(feats[0], feats[1], feats[2])
 
 
 @register()
@@ -212,6 +275,8 @@ class LiteEncoderBiFPN(nn.Module):
     """
     基于BiFPN的轻量级编码器
     支持多种注意力机制
+    支持2级或3级输入，可配置输出级数
+    支持2D位置编码
     """
     __share__ = ['eval_spatial_size']
     
@@ -225,14 +290,35 @@ class LiteEncoderBiFPN(nn.Module):
                  eval_spatial_size=None,
                  use_attention='cbam',
                  attention_reduction=16,
-                 use_global_fusion=True):
+                 use_global_fusion=True,
+                 num_outputs=2,
+                 output_strides=None,
+                 use_pos_embed=False,
+                 pos_embed_type='sincos',
+                 pe_temperature=10000.):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
         self.hidden_dim = hidden_dim
         self.eval_spatial_size = eval_spatial_size
-        self.out_channels = [hidden_dim for _ in range(len(in_channels))]
-        self.out_strides = feat_strides
+        self.num_inputs = len(in_channels)
+        self.num_outputs = num_outputs
+        self.use_pos_embed = use_pos_embed
+        self.pos_embed_type = pos_embed_type
+        self.pe_temperature = pe_temperature
+        
+        if output_strides is None:
+            if self.num_inputs == 1:
+                self.output_strides = [feat_strides[0], feat_strides[0] * 2]
+            elif self.num_inputs == 3:
+                self.output_strides = [feat_strides[1], feat_strides[2]]
+            else:
+                self.output_strides = feat_strides[-num_outputs:]
+        else:
+            self.output_strides = output_strides
+        
+        self.out_channels = [hidden_dim for _ in range(num_outputs)]
+        self.out_strides = self.output_strides
         self.use_global_fusion = use_global_fusion
         
         self.input_proj = nn.ModuleList()
@@ -262,10 +348,36 @@ class LiteEncoderBiFPN(nn.Module):
             hidden_dim, 
             act=act, 
             use_attention=use_attention,
-            attention_reduction=attention_reduction
+            attention_reduction=attention_reduction,
+            num_levels=self.num_inputs if self.num_inputs > 1 else 2
         )
         
+        if use_pos_embed and eval_spatial_size:
+            self._init_pos_embeds(eval_spatial_size)
+        
         self._initialize_weights()
+    
+    def _init_pos_embeds(self, spatial_size):
+        for idx, stride in enumerate(self.output_strides):
+            h, w = spatial_size[0] // stride, spatial_size[1] // stride
+            pos_embed = self.build_2d_sincos_position_embedding(w, h, self.hidden_dim, self.pe_temperature)
+            self.register_buffer(f'pos_embed{idx}', pos_embed)
+    
+    @staticmethod
+    def build_2d_sincos_position_embedding(w, h, embed_dim=256, temperature=10000.):
+        grid_w = torch.arange(int(w), dtype=torch.float32)
+        grid_h = torch.arange(int(h), dtype=torch.float32)
+        grid_w, grid_h = torch.meshgrid(grid_w, grid_h, indexing='ij')
+        assert embed_dim % 4 == 0, \
+            'Embed dimension must be divisible by 4 for 2D sin-cos position embedding'
+        pos_dim = embed_dim // 4
+        omega = torch.arange(pos_dim, dtype=torch.float32) / pos_dim
+        omega = 1. / (temperature ** omega)
+
+        out_w = grid_w.flatten()[..., None] @ omega[None]
+        out_h = grid_h.flatten()[..., None] @ omega[None]
+
+        return torch.concat([out_w.sin(), out_w.cos(), out_h.sin(), out_h.cos()], dim=1)[None, :, :].permute(0, 2, 1)
     
     def _initialize_weights(self):
         for m in self.modules():
@@ -279,16 +391,65 @@ class LiteEncoderBiFPN(nn.Module):
         assert len(feats) == len(self.in_channels)
         
         proj_feats = [self.input_proj[i](feat) for i, feat in enumerate(feats)]
-        proj_feats.append(self.down_sample(proj_feats[-1]))
         
-        if self.use_global_fusion:
-            global_feat = self.global_fusion(proj_feats[-1])
-            proj_feats[-1] = proj_feats[-1] + global_feat
+        if self.num_inputs == 1:
+            proj_feats.append(self.down_sample(proj_feats[-1]))
+            
+            if self.use_global_fusion:
+                global_feat = self.global_fusion(proj_feats[-1])
+                proj_feats[-1] = proj_feats[-1] + global_feat
+            
+            p3, p4 = proj_feats[0], proj_feats[1]
+            p3_out, p4_out = self.bifpn_block(p3, p4)
+            outs = [p3_out, p4_out]
         
-        p3, p4 = proj_feats[0], proj_feats[1]
-        p3_out, p4_out = self.bifpn_block(p3, p4)
+        elif self.num_inputs == 3:
+            if self.use_global_fusion:
+                global_feat = self.global_fusion(proj_feats[-1])
+                proj_feats[-1] = proj_feats[-1] + global_feat
+            
+            p2, p3, p4 = proj_feats[0], proj_feats[1], proj_feats[2]
+            p2_out, p3_out, p4_out = self.bifpn_block(p2, p3, p4)
+            
+            all_outs = {'p2': p2_out, 'p3': p3_out, 'p4': p4_out}
+            
+            stride_to_key = {8: 'p2', 16: 'p3', 32: 'p4'}
+            selected_keys = [stride_to_key.get(s, 'p3') for s in self.output_strides]
+            
+            outs = [all_outs[k] for k in selected_keys]
         
-        return [p3_out, p4_out]
+        else:
+            if self.use_global_fusion:
+                global_feat = self.global_fusion(proj_feats[-1])
+                proj_feats[-1] = proj_feats[-1] + global_feat
+            
+            outs = self.bifpn_block(*proj_feats)
+            outs = list(outs[-self.num_outputs:])
+        
+        if self.use_pos_embed:
+            outs = self._add_pos_embed(outs)
+        
+        return outs
+    
+    def _add_pos_embed(self, feats):
+        outs = []
+        for idx, feat in enumerate(feats):
+            b, c, h, w = feat.shape
+            if self.training or self.eval_spatial_size is None:
+                pos_embed = self.build_2d_sincos_position_embedding(w, h, c, self.pe_temperature).to(feat.device)
+            else:
+                pos_embed = getattr(self, f'pos_embed{idx}', None)
+                if pos_embed is not None:
+                    pos_embed = pos_embed.to(feat.device)
+                    if pos_embed.shape[-1] != h * w:
+                        pos_embed = self.build_2d_sincos_position_embedding(w, h, c, self.pe_temperature).to(feat.device)
+                else:
+                    pos_embed = self.build_2d_sincos_position_embedding(w, h, c, self.pe_temperature).to(feat.device)
+            
+            pos_embed = pos_embed.view(1, c, h, w)
+            outs.append(feat + pos_embed)
+        
+        return outs
 
 
 @register()

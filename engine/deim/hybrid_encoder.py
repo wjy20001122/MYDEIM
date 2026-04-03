@@ -355,6 +355,7 @@ class HybridEncoder(nn.Module):
                  version='dfine',
                  csp_type='csp',
                  fuse_op='cat',
+                 num_outputs=None,
                  ):
         super().__init__()
         self.in_channels = in_channels
@@ -364,8 +365,9 @@ class HybridEncoder(nn.Module):
         self.num_encoder_layers = num_encoder_layers
         self.pe_temperature = pe_temperature
         self.eval_spatial_size = eval_spatial_size
-        self.out_channels = [hidden_dim for _ in range(len(in_channels))]
-        self.out_strides = feat_strides
+        self.num_outputs = num_outputs if num_outputs is not None else len(in_channels)
+        self.out_channels = [hidden_dim for _ in range(self.num_outputs)]
+        self.out_strides = feat_strides[-self.num_outputs:] if self.num_outputs < len(feat_strides) else feat_strides
         self.fuse_op = fuse_op
 
         # channel projection
@@ -494,5 +496,8 @@ class HybridEncoder(nn.Module):
                 if self.fuse_op == 'sum' else torch.concat([downsample_feat, feat_height], dim=1)
             out = self.pan_blocks[idx](fused_feat)
             outs.append(out)
+
+        if self.num_outputs < len(outs):
+            outs = outs[-self.num_outputs:]
 
         return outs

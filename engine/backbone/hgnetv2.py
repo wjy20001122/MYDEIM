@@ -24,7 +24,135 @@ kaiming_normal_ = nn.init.kaiming_normal_
 zeros_ = nn.init.zeros_
 ones_ = nn.init.ones_
 
-__all__ = ['HGNetv2']
+__all__ = ['HGNetv2', 'SimAM', 'SPPCSPC', 'C2f']
+
+
+class SimAM(nn.Module):
+    """
+    Simple Attention Module - 零参数注意力
+    论文: SimAM: A Simple, Parameter-Free Attention Module for CNNs
+    对FPS几乎无影响，精度提升明显
+    """
+    def __init__(self, e_lambda=1e-4):
+        super().__init__()
+        self.e_lambda = e_lambda
+
+    def forward(self, x):
+        b, c, h, w = x.size()
+        n = w * h - 1
+        x_minus_mu_square = (x - x.mean(dim=[2, 3], keepdim=True)).pow(2)
+        y = x_minus_mu_square / (4 * (x_minus_mu_square.sum(dim=[2, 3], keepdim=True) / n + self.e_lambda) + 0.5)
+        return x * torch.sigmoid(y)
+
+
+class SPPCSPC(nn.Module):
+    """
+    SPPCSPC - Spatial Pyramid Pooling Cross Stage Partial Channel
+    来自 YOLOv7，多尺度特征提取，对小目标检测有效
+    """
+    def __init__(self, in_channels, out_channels=None, act='relu'):
+        super().__init__()
+        if out_channels is None:
+            out_channels = in_channels
+        c_ = out_channels // 2
+        self.conv1 = nn.Conv2d(in_channels, c_, 1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c_)
+        self.act1 = get_activation(act)
+        self.conv2 = nn.Conv2d(c_, c_, 3, 1, 1, bias=False)
+        self.bn2 = nn.BatchNorm2d(c_)
+        self.act2 = get_activation(act)
+        self.conv3 = nn.Conv2d(c_, c_, 3, 1, 1, bias=False)
+        self.bn3 = nn.BatchNorm2d(c_)
+        self.act3 = get_activation(act)
+        self.mpool1 = nn.MaxPool2d(5, stride=1, padding=2)
+        self.mpool2 = nn.MaxPool2d(9, stride=1, padding=4)
+        self.mpool3 = nn.MaxPool2d(13, stride=1, padding=6)
+        self.conv_out = nn.Conv2d(c_ * 5, out_channels, 1, bias=False)
+        self.bn_out = nn.BatchNorm2d(out_channels)
+        self.act_out = get_activation(act)
+
+    def forward(self, x):
+        x = self.act1(self.bn1(self.conv1(x)))
+        y1 = self.act2(self.bn2(self.conv2(x)))
+        y2 = self.mpool1(y1)
+        y3 = self.mpool2(y1)
+        y4 = self.mpool3(y1)
+        y5 = self.act3(self.bn3(self.conv3(x)))
+        out = torch.cat([y1, y2, y3, y4, y5], dim=1)
+        return self.act_out(self.bn_out(self.conv_out(out)))
+
+
+class Bottleneck(nn.Module):
+    """Standard bottleneck"""
+    def __init__(self, c, shortcut=True, g=1, k=(3, 3), e=0.5, act='silu'):
+        super().__init__()
+        c_ = int(c * e)
+        self.cv1 = ConvBNAct(c, c_, k[0], 1, use_act=True, act=act)
+        self.cv2 = ConvBNAct(c_, c, k[1], 1, groups=g, use_act=True, act=act)
+        self.add = shortcut and c == c_
+
+    def forward(self, x):
+        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+
+
+class DWConv(nn.Module):
+    """Depth-wise Convolution with Point-wise Convolution"""
+    def __init__(self, c1, c2, k=3, s=1, act='silu'):
+        super().__init__()
+        self.dw = nn.Conv2d(c1, c1, k, s, k//2, groups=c1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c1)
+        self.pw = nn.Conv2d(c1, c2, 1, 1, 0, bias=False)
+        self.bn2 = nn.BatchNorm2d(c2)
+        self.act = get_activation(act)
+
+    def forward(self, x):
+        return self.act(self.bn2(self.pw(self.act(self.bn1(self.dw(x))))))
+
+
+class LightBottleneck(nn.Module):
+    """Lightweight bottleneck using DWConv - much fewer FLOPs"""
+    def __init__(self, c, shortcut=True, e=0.5, act='silu'):
+        super().__init__()
+        c_ = int(c * e)
+        self.cv1 = ConvBNAct(c, c_, 1, 1, use_act=True, act=act)
+        self.cv2 = DWConv(c_, c, k=3, act=act)
+        self.add = shortcut and c == c_
+
+    def forward(self, x):
+        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+
+
+class C2f(nn.Module):
+    """
+    C2f module - Cross Stage Partial with Faster implementation
+    来自 YOLOv8，比C3更高效，梯度流更好
+    
+    特点:
+    - Split输入为两部分
+    - 多个Bottleneck并行处理
+    - Concat输出，保留更多信息流
+    - 对小目标检测效果显著提升
+    """
+    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5, act='silu', lightweight=False):
+        super().__init__()
+        self.c = int(c2 * e)
+        self.cv1 = ConvBNAct(c1, 2 * self.c, 1, 1, use_act=True, act=act)
+        self.cv2 = ConvBNAct((2 + n) * self.c, c2, 1, use_act=True, act=act)
+        if lightweight:
+            self.m = nn.ModuleList([LightBottleneck(self.c, shortcut, e=1.0, act=act) for _ in range(n)])
+        else:
+            self.m = nn.ModuleList([Bottleneck(self.c, shortcut, g, k=(3, 3), e=1.0, act=act) for _ in range(n)])
+
+    def forward(self, x):
+        y = list(self.cv1(x).chunk(2, 1))
+        y.extend(m(y[-1]) for m in self.m)
+        return self.cv2(torch.cat(y, 1))
+
+    def forward_split(self, x):
+        """Alternative forward method for better gradient flow"""
+        y = list(self.cv1(x).split((self.c, self.c), 1))
+        y.extend(m(y[-1]) for m in self.m)
+        return self.cv2(torch.cat(y, 1))
 
 
 class LearnableAffineBlock(nn.Module):
@@ -399,13 +527,14 @@ class HGNetv2(nn.Module):
             },
             'url': 'https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B0_stage1.pth'
         },
-        'Pico': {      # only 3 stages
+        'Pico': {
             'stem_channels': [3, 16, 16],
             'stage_config': {
                 # in_channels, mid_channels, out_channels, num_blocks, downsample, light_block, kernel_size, layer_num
                 "stage1": [16, 16, 64, 1, False, False, 3, 3],
                 "stage2": [64, 32, 256, 1, True, False, 3, 3],
                 "stage3": [256, 64, 512, 2, True, True, 5, 3],
+                "stage4": [512, 128, 1024, 1, True, True, 5, 3],
             },
             'url': 'https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B0_stage1.pth'
         },
@@ -498,6 +627,13 @@ class HGNetv2(nn.Module):
                  pretrained=True,
                  local_model_dir='weight/hgnetv2/',
                  act='relu',
+                 use_simam_stages=None,
+                 use_sppcspc_stage=-1,
+                 use_c2f_stages=None,
+                 c2f_n=1,
+                 c2f_e=0.5,
+                 c2f_lightweight=False,
+                 custom_pretrained=None
                  ):
         super().__init__()
         self.use_lab = use_lab
@@ -538,6 +674,36 @@ class HGNetv2(nn.Module):
                     act=act)
             )
 
+        self.use_simam_stages = use_simam_stages if use_simam_stages is not None else []
+        self.use_sppcspc_stage = use_sppcspc_stage
+
+        self.simam_modules = nn.ModuleList()
+        if self.use_simam_stages:
+            for stage_idx in self.use_simam_stages:
+                if stage_idx < len(self.stages):
+                    out_ch = stage_config[list(stage_config.keys())[stage_idx]][2]
+                    self.simam_modules.append(SimAM())
+                else:
+                    self.simam_modules.append(nn.Identity())
+
+        self.sppcspc_module = None
+        if self.use_sppcspc_stage >= 0 and self.use_sppcspc_stage < len(self.stages):
+            sppcspc_idx = self.use_sppcspc_stage
+            out_ch = stage_config[list(stage_config.keys())[sppcspc_idx]][2]
+            self.sppcspc_module = SPPCSPC(out_ch, act=act)
+
+        self.c2f_modules = nn.ModuleList()
+        self.use_c2f_stages = use_c2f_stages if use_c2f_stages is not None else []
+        if self.use_c2f_stages and isinstance(self.use_c2f_stages, list):
+            for stage_idx in self.use_c2f_stages:
+                if stage_idx < len(self.stages):
+                    out_ch = stage_config[list(stage_config.keys())[stage_idx]][2]
+                    self.c2f_modules.append(C2f(out_ch, out_ch, n=c2f_n, e=c2f_e, act=act, lightweight=c2f_lightweight))
+                else:
+                    self.c2f_modules.append(nn.Identity())
+        else:
+            self.use_c2f_stages = []
+
         if freeze_at >= 0:
             self._freeze_parameters(self.stem)
             if not freeze_stem_only:
@@ -547,7 +713,25 @@ class HGNetv2(nn.Module):
         if freeze_norm:
             self._freeze_norm(self)
 
-        if pretrained:
+        if custom_pretrained and os.path.exists(custom_pretrained):
+            RED, GREEN, RESET = "\033[91m", "\033[92m", "\033[0m"
+            try:
+                state = torch.load(custom_pretrained, map_location='cpu')
+                print(f"Loading custom pretrained weights from: {custom_pretrained}")
+                
+                if 'model' in state:
+                    state = state['model']
+                elif 'state_dict' in state:
+                    state = state['state_dict']
+                
+                missing_keys, unexpected_keys = self.load_state_dict(state, strict=False)
+                print(f"Loaded custom pretrained weights from: {custom_pretrained}")
+                print(f"Missing keys: {len(missing_keys)}")
+                print(f"Unexpected keys: {len(unexpected_keys)}")
+            except Exception as e:
+                print(f"Failed to load custom pretrained weights: {e}")
+                
+        elif pretrained:
             RED, GREEN, RESET = "\033[91m", "\033[92m", "\033[0m"
             try:
                 if (name in ['Atto', 'Femto', 'Pico']):
@@ -580,7 +764,7 @@ class HGNetv2(nn.Module):
                     print("Missing keys:", missing_keys)
                     print("Unexpected keys:", unexpected_keys)
                 else:
-                    self.load_state_dict(state)
+                    self.load_partial_state_dict(self, state)
 
             except (Exception, KeyboardInterrupt) as e:
                 is_distributed = torch.distributed.is_available() and torch.distributed.is_initialized()
@@ -624,8 +808,20 @@ class HGNetv2(nn.Module):
     def forward(self, x):
         x = self.stem(x)
         outs = []
+        simam_idx = 0
+        c2f_idx = 0
         for idx, stage in enumerate(self.stages):
             x = stage(x)
+            if self.use_simam_stages and idx in self.use_simam_stages:
+                if simam_idx < len(self.simam_modules):
+                    x = self.simam_modules[simam_idx](x)
+                simam_idx += 1
+            if idx == self.use_sppcspc_stage and self.sppcspc_module is not None:
+                x = self.sppcspc_module(x)
+            if self.use_c2f_stages and idx in self.use_c2f_stages:
+                if c2f_idx < len(self.c2f_modules):
+                    x = self.c2f_modules[c2f_idx](x)
+                c2f_idx += 1
             if idx in self.return_idx:
                 outs.append(x)
         return outs
