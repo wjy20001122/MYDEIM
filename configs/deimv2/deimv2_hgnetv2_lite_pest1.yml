@@ -20,7 +20,7 @@ HGNetv2:
   c2f_n: 1
   c2f_e: 0.25
   c2f_lightweight: True
-  
+  agg_type: 'se'
 DEIM:
   backbone: HGNetv2
   encoder: LiteEncoderBiFPN
@@ -100,15 +100,15 @@ train_dataloader:
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
         - {type: ConvertBoxes, fmt: 'cxcywh', normalize: True}
       policy:
-        epoch: [4, 42, 72]
+        epoch: [4, 52, 72]
         ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop', 'GaussianNoise', 'GaussianBlur']
       mosaic_prob: 0.5
 
   collate_fn:
     mixup_prob: 0.1
-    mixup_epochs: [4, 42]
+    mixup_epochs: [4, 52]
     copyblend_prob: 0.05
-    copyblend_epochs: [4, 42]
+    copyblend_epochs: [4, 52]
     stop_epoch: 72
     ema_restart_decay: 0.9999
     base_size: 640

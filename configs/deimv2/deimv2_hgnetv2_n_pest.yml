@@ -47,7 +47,7 @@ DEIMTransformer:
 epoches: 84
 
 warmup_iter: 1500
-flat_epoch: 50
+flat_epoch: 60
 no_aug_epoch: 12
 lr_gamma: 0.5
 
@@ -56,23 +56,23 @@ optimizer:
   params:
     -
       params: '^(?=.*backbone)(?!.*norm|bn).*$'
-      lr: 0.0004
+      lr: 0.0008
     -
       params: '^(?=.*backbone)(?=.*norm|bn).*$'
-      lr: 0.0004
+      lr: 0.0008
       weight_decay: 0.
     -
       params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bn|bias)).*$'
       weight_decay: 0.
 
-  lr: 0.0008
+  lr: 0.00016
   betas: [0.9, 0.999]
   weight_decay: 0.0001
 
 eval_spatial_size: [640, 640]
 
 train_dataloader: 
-  total_batch_size: 16
+  total_batch_size: 12
   dataset: 
     transforms:
       ops:
@@ -90,22 +90,22 @@ train_dataloader:
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
         - {type: ConvertBoxes, fmt: 'cxcywh', normalize: True}
       policy:
-        epoch: [4, 42, 72]
-        ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop', 'GaussianNoise', 'GaussianBlur']
+        epoch: [4, 60, 72]
+        ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop', 'GaussianNoise']
       mosaic_prob: 0.5
 
   collate_fn:
     mixup_prob: 0.1
-    mixup_epochs: [4, 42]
+    mixup_epochs: [4, 60]
     copyblend_prob: 0.05
-    copyblend_epochs: [4, 42]
+    copyblend_epochs: [4, 60]
     stop_epoch: 72
     ema_restart_decay: 0.9999
     base_size: 640
     base_size_repeat: ~
 
 val_dataloader:
-  total_batch_size: 32
+  total_batch_size: 24
   dataset:
     transforms:
       ops:
@@ -127,4 +127,4 @@ DEIMCriterion:
     gamma: 2.0
     change_matcher: True
     iou_order_alpha: 4.0
-    matcher_change_epoch: 60
+    matcher_change_epoch: 70

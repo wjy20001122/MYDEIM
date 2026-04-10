@@ -1,0 +1,247 @@
+<mxfile host="app.diagrams.net" modified="2025-01-01T00:00:00.000Z" agent="Draw.io" version="21.0.0" type="device">
+  <diagram name="DEIMv2-HGNetv2-B0-Arch" id="deimv2-arch">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ==================== TITLE ==================== -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size:20px&quot;&gt;DEIMv2 Network Architecture&lt;/b&gt;&lt;br&gt;&lt;i&gt;HGNetv2-B0 + HybridEncoder(dfine) + DEIMTransformer | PEST Detection&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="480" y="10" width="500" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== INPUT IMAGE ==================== -->
+        <mxCell id="input_box" value="&lt;b&gt;Input Image&lt;/b&gt;&lt;br&gt;(B, 3, 640, 640)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="130" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="input_img" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="185" y="75" width="90" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="input_img_text" value="&lt;i&gt;pest image&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="198" y="92" width="64" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow_in" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="input_img" target="stem" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== HGNETV2 BACKBONE ==================== -->
+        <mxCell id="backbone_label" value="&lt;b&gt;HGNetv2-B0&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="30" y="145" width="100" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- Stem Block -->
+        <mxCell id="stem" value="&lt;b&gt;Stem Block&lt;/b&gt;&lt;br&gt;Conv 3×3&lt;br&gt;(3→48→96)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="175" width="115" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 1 -->
+        <mxCell id="stage1" value="&lt;b&gt;Stage 1&lt;/b&gt;&lt;br&gt;HG-Block×1&lt;br&gt;(32, 32, 128, 1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="250" width="115" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 2 -->
+        <mxCell id="stage2" value="&lt;b&gt;Stage 2&lt;/b&gt;&lt;br&gt;HG-Block×1 ↓&lt;br&gt;(128, 64, 512, 2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="320" width="115" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 3 -->
+        <mxCell id="stage3" value="&lt;b&gt;Stage 3&lt;/b&gt;&lt;br&gt;LightBottle×2 ↓&lt;br&gt;(512, 128, 1024, 3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="390" width="115" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 4 -->
+        <mxCell id="stage4" value="&lt;b&gt;Stage 4&lt;/b&gt;&lt;br&gt;LightBottle×1 ↓&lt;br&gt;(1024, 256, 2048, 1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="460" width="115" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Backbone arrows -->
+        <mxCell id="arr_s1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="stem" target="stage1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="arr_s2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="stage1" target="stage2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="arr_s3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="stage2" target="stage3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="arr_s4" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="stage3" target="stage4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== HYBRID ENCODER ==================== -->
+        <mxCell id="enc_label" value="&lt;b&gt;HybridEncoder&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="185" y="145" width="110" height="24" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="enc_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;strokeWidth=1;dashed=1;dashPattern=5 2;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="180" y="170" width="280" height="360" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="enc_feat_label" value="&lt;b&gt;Encoded Features&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="270" y="175" width="110" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Proj 1 from Stage 2 -->
+        <mxCell id="proj1" value="&lt;b&gt;Proj 1&lt;/b&gt;&lt;br&gt;512→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="195" y="250" width="85" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_proj1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="stage2" target="proj1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Proj 2 from Stage 3 -->
+        <mxCell id="proj2" value="&lt;b&gt;Proj 1&lt;/b&gt;&lt;br&gt;1024→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="195" y="320" width="85" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_proj2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="stage3" target="proj2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Proj 3 from Stage 4 -->
+        <mxCell id="proj3" value="&lt;b&gt;Proj 1&lt;/b&gt;&lt;br&gt;2048→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="195" y="390" width="85" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_proj3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="stage4" target="proj3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- AIFI / SE-Attention + FFN -->
+        <mxCell id="aifi" value="&lt;b&gt;SE-Attention&lt;/b&gt;&lt;br&gt;+ FFN&lt;br&gt;&lt;br&gt;AIFI @ idx[1]&lt;br&gt;hidden_dim=128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="305" y="295" width="110" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_aifi" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="proj2" target="aifi" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Cross-Scale Fusion -->
+        <mxCell id="csf" value="&lt;b&gt;Cross-Scale Fusion&lt;/b&gt;&lt;br&gt;&lt;br&gt;Bi-FPN-PAN&lt;br&gt;RepNCSPELAN4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="300" y="200" width="125" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_csf_up" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="aifi" target="csf" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Encoder Layers box -->
+        <mxCell id="enc_layers" value="&lt;b&gt;Encoder Layers × N&lt;/b&gt;&lt;br&gt;hidden_dim=128&lt;br&gt;expansion=&lt;b&gt;0.34&lt;/b&gt;&lt;br&gt;depth_mult=&lt;b&gt;0.5&lt;/b&gt;&lt;br&gt;act=&lt;b&gt;SiLU&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="295" y="400" width="135" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_enc_layer" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="aifi" target="enc_layers" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Arrow from CSF to Decoder -->
+        <mxCell id="arr_enc_dec" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" source="csf" target="query_emb" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== DEIM DECODER ==================== -->
+        <mxCell id="dec_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;strokeWidth=1;dashed=1;dashPattern=5 2;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="495" y="140" width="310" height="400" as="geometry"/>
+        </mxCell>
+        <mxCell id="dec_label" value="&lt;b&gt;DEIM Decoder&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="510" y="148" width="100" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- Output Image placeholder -->
+        <mxCell id="output_img" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="165" width="90" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="output_img_text" value="&lt;i&gt;detected&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="720" y="182" width="50" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- Query Embedding -->
+        <mxCell id="query_emb" value="&lt;b&gt;Query Embedding&lt;/b&gt;&lt;br&gt;(300 queries)&lt;br&gt;learnable pos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="170" width="135" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Decoder Layer 1 -->
+        <mxCell id="dec1" value="&lt;b&gt;Decoder Layer 1&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;Self-Attn&lt;br&gt;Cross-Attn(D-FFN)&lt;br&gt;num_points=[4,4,2]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="520" y="250" width="140" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_q_d1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="query_emb" target="dec1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Decoder Layer 2 -->
+        <mxCell id="dec2" value="&lt;b&gt;Decoder Layer 2&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;Self-Attn + Cross-Attn&lt;br&gt;D-FFN (320 dim)&lt;br&gt;SwiGLU FFN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="520" y="355" width="140" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_d1_d2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="dec1" target="dec2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Decoder Layer 3 -->
+        <mxCell id="dec3" value="&lt;b&gt;Decoder Layer 3&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;Self-Attn + Cross-Attn&lt;br&gt;D-FFN + Output&lt;br&gt;LQE (Quality Est.)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="520" y="460" width="140" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_d2_d3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="dec2" target="dec3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Multi-scale feature arrows to decoder (dashed) -->
+        <mxCell id="arr_feat_d1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=open;endFill=0;dashed=1;dashPattern=3 3;" edge="1" source="enc_layers" target="dec1" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="450" y="292"/><mxPoint x="450" y="292"/></Array></mxGeometry></mxCell>
+        <mxCell id="arr_feat_d2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=open;endFill=0;dashed=1;dashPattern=3 3;" edge="1" source="enc_layers" target="dec2" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="475" y="397"/><mxPoint x="475" y="397"/></Array></mxGeometry></mxCell>
+        <mxCell id="arr_feat_d3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=open;endFill=0;dashed=1;dashPattern=3 3;" edge="1" source="enc_layers" target="dec3" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="500" y="502"/><mxPoint x="500" y="502"/></Array></mxGeometry></mxCell>
+
+        <!-- ==================== OUTPUT & HEADS ==================== -->
+
+        <!-- Output Box -->
+        <mxCell id="output_box" value="&lt;b&gt;Output&lt;/b&gt;&lt;br&gt;Labels: (B, N)&lt;br&gt;Boxes: (B, N, 4)&lt;br&gt;Scores: (B, N)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="695" y="260" width="105" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_out" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="dec3" target="output_box" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="502"/>
+              <mxPoint x="680" y="295"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arr_out_img" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="output_box" target="output_img" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Classification Head -->
+        <mxCell id="cls_head" value="&lt;b&gt;Classification Head&lt;/b&gt;&lt;br&gt;&lt;br&gt;N classes&lt;br&gt;Focal Loss (&lt;i&gt;α&lt;/i&gt;=0.25,&lt;br&gt;&lt;i&gt;γ&lt;/i&gt;=1.5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="685" y="350" width="125" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_cls" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="dec3" target="cls_head" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Regression Head -->
+        <mxCell id="reg_head" value="&lt;b&gt;Regression Head&lt;/b&gt;&lt;br&gt;&lt;br&gt;L1 Loss (&lt;i&gt;w&lt;/i&gt;=5.0)&lt;br&gt;GIoU Loss (&lt;i&gt;w&lt;/i&gt;=2.0)&lt;br&gt;DFL (&lt;i&gt;w&lt;/i&gt;=1.5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="685" y="435" width="125" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr_reg" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="dec3" target="reg_head" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Arrows from heads back to output -->
+        <mxCell id="arr_cls_out" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="cls_head" target="output_box" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="arr_reg_out" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="reg_head" target="output_box" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="830" y="475"/>
+              <mxPoint x="830" y="295"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ==================== CONFIG INFO BOX ==================== -->
+        <mxCell id="config_box" value="&lt;b&gt;Config: deimv2_hgnetv2_n_pest.yml&lt;/b&gt;&lt;hr&gt;• HGNetv2-B0: return_idx=[1,2,3], use_lab=True&lt;br&gt;• HybridEncoder: hidden=128, AIFI@idx[1]&lt;br&gt;• expansion=0.34, depth_mult=0.5, version=dfine&lt;br&gt;• DEIMTransformer: 3 layers, ffn=512&lt;br&gt;• num_points=[4,4,2], reg_max=32&lt;br&gt;• Loss: mal=1.0, bbox=5.0, giou=2.0, fgl=0.15, ddf=1.5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;strokeWidth=1;fontSize=9;align=left;spacingLeft=8;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="30" y="550" width="340" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="420" y="555" width="55" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="578" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg1t" value="Stem / Decoder Layers" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="443" y="576" width="118" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="598" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg2t" value="Backbone Stages / Heads" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="443" y="596" width="122" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="575" y="578" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg3t" value="Input Projection" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="598" y="576" width="88" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="575" y="598" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg4t" value="Query / Fusion" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="598" y="596" width="80" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg5" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="698" y="578" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg5t" value="AIFI / Attention" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="721" y="576" width="90" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg6" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="698" y="598" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg6t" value="Input / Output" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="721" y="596" width="74" height="18" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

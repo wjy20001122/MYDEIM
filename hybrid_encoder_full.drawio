@@ -1,0 +1,406 @@
+<mxfile host="app.diagrams.net" modified="2025-01-01T00:00:00.000Z" agent="Draw.io" version="21.0.0" type="device">
+  <diagram name="HybridEncoder-Full-Fusion" id="encoder-full">
+    <mxGraphModel dx="2200" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ==================== TITLE ==================== -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size:22px&quot;&gt;HybridEncoder Complete Architecture&lt;/b&gt;&lt;br&gt;&lt;i style=&quot;font-size:12px&quot;&gt;version=dfine | hidden_dim=128 | expansion=0.34 | depth_mult=0.5 | fuse_op=sum&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="500" y="10" width="600" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== INPUT FROM BACKBONE ==================== -->
+        <mxCell id="input_label" value="&lt;b&gt;Input Features (from HGNetv2-B0 Backbone)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="260" y="60" width="340" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- P2 input -->
+        <mxCell id="p2_in" value="&lt;b&gt;P2&lt;/b&gt;&lt;br&gt;256ch&lt;br&gt;stride=8&lt;br&gt;H/8 × W/8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="95" width="90" height="65" as="geometry"/>
+        </mxCell>
+        <!-- P3 input -->
+        <mxCell id="p3_in" value="&lt;b&gt;P3&lt;/b&gt;&lt;br&gt;512ch&lt;br&gt;stride=16&lt;br&gt;H/16×W/16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="195" width="90" height="65" as="geometry"/>
+        </mxCell>
+        <!-- P4 input -->
+        <mxCell id="p4_in" value="&lt;b&gt;P4&lt;/b&gt;&lt;br&gt;1024ch&lt;br&gt;stride=32&lt;br&gt;H/32×W/32" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="295" width="90" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== STEP 1: INPUT PROJECTION ==================== -->
+        <mxCell id="proj_label" value="&lt;b&gt;Step 1: Input Projection (Conv 1×1)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="175" y="70" width="250" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Proj boxes -->
+        <mxCell id="proj2" value="&lt;b&gt;Proj&lt;/b&gt;&lt;br&gt;Conv1×1&lt;br&gt;256→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="160" y="100" width="80" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="proj3" value="&lt;b&gt;Proj&lt;/b&gt;&lt;br&gt;Conv1×1&lt;br&gt;512→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="160" y="200" width="80" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="proj4" value="&lt;b&gt;Proj&lt;/b&gt;&lt;br&gt;Conv1×1&lt;br&gt;1024→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="160" y="300" width="80" height="52" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows: input -> proj -->
+        <mxCell id="a_p2_proj" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="p2_in" target="proj2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a_p3_proj" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="p3_in" target="proj3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a_p4_proj" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="p4_in" target="proj4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== STEP 2: AIFI (TRANSFORMER ENCODER) ==================== -->
+        <mxCell id="aifi_label" value="&lt;b&gt;Step 2: AIFI @ idx[1] (Transformer Encoder on P3)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="295" y="170" width="350" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- AIFI box - detailed -->
+        <mxCell id="aifi_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;dashed=1;dashPattern=3 2;" vertex="1" parent="1">
+          <mxGeometry x="270" y="193" width="210" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="aifi_title" value="&lt;b&gt;AIFI (TransformerEncoder × 1 layer)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#b36600;" vertex="1" parent="1">
+          <mxGeometry x="300" y="196" width="200" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="aifi_detail" value="Flatten [B,128,H,W] → [B,HW,128]&lt;br&gt;Self-Attention + FFN (dim=512)&lt;br&gt;+ 2D Sin-Cos Pos Embedding&lt;br&gt;Reshape → [B,128,H,W]" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=8;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="285" y="212" width="185" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow proj3 -> aifi -->
+        <mxCell id="a_proj3_aifi" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.8;endArrow=block;endFill=1;strokeColor=#d79b00;" edge="1" source="proj3" target="aifi_box" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Proj outputs labels -->
+        <mxCell id="proj2_out_label" value="128ch/8" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=8;fontColor=#888888;" vertex="1" parent="1">
+          <mxGeometry x="178" y="155" width="44" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="proj3_out_label" value="128ch/16" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=8;fontColor=#888888;" vertex="1" parent="1">
+          <mxGeometry x="355" y="265" width="48" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="proj4_out_label" value="128ch/32" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=8;fontColor=#888888;" vertex="1" parent="1">
+          <mxGeometry x="176" y="355" width="48" height="14" as="geometry"/>
+        </mxCell>
+
+        <!-- AIFI output arrow going down to FPN area -->
+        <mxCell id="aifi_out" value="&lt;b&gt;P3'&lt;/b&gt;&lt;br&gt;(AIFI enhanced)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="330" y="272" width="90" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_aifi_out" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#d79b00;" edge="1" source="aifi_box" target="aifi_out" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== FPN TOP-DOWN SECTION ==================== -->
+        <mxCell id="fpn_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff5f5;strokeColor=#f8cecc;strokeWidth=2;dashed=1;dashPattern=5 3;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="500" y="85" width="520" height="310" as="geometry"/>
+        </mxCell>
+        <mxCell id="fpn_title" value="&lt;b style=&quot;font-size:14px;color:#b85450&quot;&gt;━━━ Step 3: FPN Top-Down Path ━━━&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="650" y="88" width="280" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- FPN: Start with inner_outs = [P4_proj] at top right -->
+        <!-- P4 lateral conv -->
+        <mxCell id="fpn_lat4" value="&lt;b&gt;LateralConv&lt;/b&gt;&lt;br&gt;Conv1×1&lt;br&gt;128→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;strokeWidth=1;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="520" y="290" width="85" height="50" as="geometry"/>
+        </mxCell>
+        <!-- Arrow proj4 -> fpn_lat4 -->
+        <mxCell id="a_p4_fpnlat" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="proj4" target="fpn_lat4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Upsample P4->P3 size -->
+        <mxCell id="up43" value="&lt;b&gt;Upsample&lt;/b&gt;&lt;br&gt;×2 nearest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="625" y="255" width="80" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_lat4_up" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="fpn_lat4" target="up43" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- SUM fusion box P4+P3 -->
+        <mxCell id="sum_fpn1" value="&lt;b&gt;⊕ SUM&lt;/b&gt;&lt;br&gt;element-wise add&lt;br&gt;128ch/16" style="shape=hexagon;perimeter=hexagonPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="725" y="248" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_up_sum1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" source="up43" target="sum_fpn1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Arrow from aifi_out to sum_fpn1 (P3' joins) -->
+        <mxCell id="a_aifi_sum1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#d79b00;dashed=1;dashPattern=3 2;" edge="1" source="aifi_out" target="sum_fpn1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="293"/>
+              <mxPoint x="775" y="293"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sum1_label" value="from AIFI" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=7;fontColor=#d79b00;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="550" y="285" width="50" height="14" as="geometry"/>
+        </mxCell>
+
+        <!-- FPN Fuse Block 1 (P4+P3) -->
+        <mxCell id="fpn_fuse1" value="&lt;b&gt;FPN Fuse Block&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;RepNCSPELAN4&lt;br&gt;c1=128 c2=128&lt;br&gt;c3=256 c4=22 n=2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="850" y="240" width="130" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sum1_fuse1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" source="sum_fpn1" target="fpn_fuse1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- FPN_P3 output -->
+        <mxCell id="fpn_p3" value="&lt;b&gt;FPN_P3&lt;/b&gt;&lt;br&gt;128ch /16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="850" y="165" width="100" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_fuse1_fpnp3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" source="fpn_fuse1" target="fpn_p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== FPN iteration 2: P3 -> P2 ===== -->
+        <!-- Lateral Conv on FPN_P3 -->
+        <mxCell id="fpn_lat3" value="&lt;b&gt;LateralConv&lt;/b&gt;&lt;br&gt;Conv1×1&lt;br&gt;128→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;strokeWidth=1;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="520" y="115" width="85" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_fpnp3_lat3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="fpn_p3" target="fpn_lat3" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="187"/>
+              <mxPoint x="1000" y="140"/>
+              <mxPoint x="605" y="140"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Upsample P3->P2 size -->
+        <mxCell id="up32" value="&lt;b&gt;Upsample&lt;/b&gt;&lt;br&gt;×2 nearest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="625" y="110" width="80" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_lat3_up" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;" edge="1" source="fpn_lat3" target="up32" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- SUM fusion box P3+P2 -->
+        <mxCell id="sum_fpn2" value="&lt;b&gt;⊕ SUM&lt;/b&gt;&lt;br&gt;element-wise add&lt;br&gt;128ch/8" style="shape=hexagon;perimeter=hexagonPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="725" y="103" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_up_sum2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" source="up32" target="sum_fpn2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Arrow from proj2 to sum_fpn2 (P2_proj joins) -->
+        <mxCell id="a_proj2_sum2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#9673a6;dashed=1;dashPattern=3 2;" edge="1" source="proj2" target="sum_fpn2" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="175"/>
+              <mxPoint x="775" y="175"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sum2_label" value="from Proj" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=7;fontColor=#9673a6;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="420" y="160" width="50" height="14" as="geometry"/>
+        </mxCell>
+
+        <!-- FPN Fuse Block 2 (P3+P2) -->
+        <mxCell id="fpn_fuse2" value="&lt;b&gt;FPN Fuse Block&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;RepNCSPELAN4&lt;br;c1=128 c2=128&lt;br&gt;c3=256 c4=22 n=2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="850" y="95" width="130" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sum2_fuse2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" source="sum_fpn2" target="fpn_fuse2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- FPN_P2 output -->
+        <mxCell id="fpn_p2" value="&lt;b&gt;FPN_P2&lt;/b&gt;&lt;br&gt;128ch /8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="995" y="107" width="100" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_fuse2_fpnp2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" source="fpn_fuse2" target="fpn_p2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+
+        <!-- ==================== PAN BOTTOM-UP SECTION ==================== -->
+        <mxCell id="pan_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5fff5;strokeColor=#82b366;strokeWidth=2;dashed=1;dashPattern=5 3;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="500" y="410" width="620" height="320" as="geometry"/>
+        </mxCell>
+        <mxCell id="pan_title" value="&lt;b style=&quot;font-size:14px;color:#38761d&quot;&gt;━━━ Step 4: PAN Bottom-Up Path ━━━&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="700" y="413" width="300" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- PAN: starts with outs = [FPN_P2] -->
+        <!-- Arrow FPN_P2 down to PAN area -->
+        <mxCell id="a_fpnp2_pan" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" source="fpn_p2" target="pan_start" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1045" y="400"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- PAN start node (FPN_P2 passed through) -->
+        <mxCell id="pan_start" value="&lt;b&gt;FPN_P2&lt;/b&gt;&lt;br&gt;128ch/8&lt;br&gt;(pass-through)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="520" y="450" width="95" height="52" as="geometry"/>
+        </mxCell>
+
+        <!-- SCDown P2->P3 -->
+        <mxCell id="scdown23" value="&lt;b&gt;SCDown&lt;/b&gt;&lt;br&gt;─────────&lt;br&gt;PW Conv1×1&lt;br&gt;DW Conv3×3 s=2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="645" y="450" width="105" height="62" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_pan_scdown23" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="pan_start" target="scdown23" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- SUM fusion for PAN step 1: SCDown(P2) + FPN_P3 -->
+        <mxCell id="sum_pan1" value="&lt;b&gt;⊕ SUM&lt;/b&gt;&lt;br&gt;element-wise add&lt;br&gt;128ch/16" style="shape=hexagon;perimeter=hexagonPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="785" y="453" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_scdown23_sumpan1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;strokeColor=#82b366;" edge="1" source="scdown23" target="sum_pan1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Arrow from FPN_P3 to sum_pan1 -->
+        <mxCell id="a_fpnp3_sumpan1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#b85450;dashed=1;dashPattern=3 2;" edge="1" source="fpn_p3" target="sum_pan1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="210"/>
+              <mxPoint x="900" y="430"/>
+              <mxPoint x="835" y="430"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pan1_label" value="from FPN_P3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=7;fontColor=#b85450;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="905" y="320" width="58" height="14" as="geometry"/>
+        </mxCell>
+
+        <!-- PAN Fuse Block 1 -->
+        <mxCell id="pan_fuse1" value="&lt;b&gt;PAN Fuse Block&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;RepNCSPELAN4&lt;br;c1=128 c2=128&lt;br&gt;c3=256 c4=22 n=2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="920" y="445" width="130" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sumpan1_panfuse1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#82b366;" edge="1" source="sum_pan1" target="pan_fuse1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- PAN_P3 output -->
+        <mxCell id="pan_p3" value="&lt;b&gt;PAN_P3&lt;/b&gt;&lt;br&gt;128ch /16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="920" y="545" width="100" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_panfuse1_panp3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#82b366;" edge="1" source="pan_fuse1" target="pan_p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== PAN iteration 2: P3 -> P4 ===== -->
+        <!-- SCDown P3->P4 -->
+        <mxCell id="scdown34" value="&lt;b&gt;SCDown&lt;/b&gt;&lt;br&gt;─────────&lt;br&gt;PW Conv1×1&lt;br&gt;DW Conv3×3 s=2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="645" y="580" width="105" height="62" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_panp3_scdown34" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="pan_p3" target="scdown34" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="970" y="567"/>
+              <mxPoint x="697" y="567"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SUM fusion for PAN step 2: SCDown(P3) + P4_lateral -->
+        <mxCell id="sum_pan2" value="&lt;b&gt;⊕ SUM&lt;/b&gt;&lt;br&gt;element-wise add&lt;br&gt;128ch/32" style="shape=hexagon;perimeter=hexagonPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="785" y="583" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_scdown34_sumpan2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.2;endArrow=block;endFill=1;strokeColor=#82b366;" edge="1" source="scdown34" target="sum_pan2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Arrow from P4_lateral (fpn_lat4) to sum_pan2 -->
+        <mxCell id="a_lat4_sumpan2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#999999;dashed=1;dashPattern=3 2;" edge="1" source="fpn_lat4" target="sum_pan2" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="562" y="365"/>
+              <mxPoint x="835" y="560"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pan2_label" value="from Lat(P4)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=7;fontColor=#999999;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="570" y="470" width="68" height="14" as="geometry"/>
+        </mxCell>
+
+        <!-- PAN Fuse Block 2 -->
+        <mxCell id="pan_fuse2" value="&lt;b&gt;PAN Fuse Block&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;RepNCSPELAN4&lt;br;c1=128 c2=128&lt;br&gt;c3=256 c4=22 n=2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="920" y="575" width="130" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sumpan2_panfuse2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#82b366;" edge="1" source="sum_pan2" target="pan_fuse2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- PAN_P4 output -->
+        <mxCell id="pan_p4" value="&lt;b&gt;PAN_P4&lt;/b&gt;&lt;br&gt;128ch /32" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="920" y="665" width="100" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_panfuse2_panp4" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;endArrow=block;endFill=1;strokeColor=#82b366;" edge="1" source="pan_fuse2" target="pan_p4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== OUTPUT ==================== -->
+        <mxCell id="out_label" value="&lt;b&gt;Output Features (to DEIM Decoder)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="440" width="230" height="24" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="out2_final" value="&lt;b&gt;Out_1&lt;/b&gt;&lt;br&gt;128ch /8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2.5;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1095" y="120" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="out3_final" value="&lt;b&gt;Out_2&lt;/b&gt;&lt;br&gt;128ch /16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2.5;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1095" y="547" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="out4_final" value="&lt;b&gt;Out_3&lt;/b&gt;&lt;br&gt;128ch /32" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2.5;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1095" y="667" width="100" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Output arrows -->
+        <mxCell id="a_out2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;strokeColor=#6c8ebf;" edge="1" source="fpn_p2" target="out2_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a_out3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;strokeColor=#6c8ebf;" edge="1" source="pan_p3" target="out3_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a_out4" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;strokeColor=#6c8ebf;" edge="1" source="pan_p4" target="out4_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== REPNC SPELAN4 DETAIL BOX ==================== -->
+        <mxCell id="detail_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#cccccc;strokeWidth=1;dashed=1;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="40" y="410" width="430" height="315" as="geometry"/>
+        </mxCell>
+        <mxCell id="detail_title" value="&lt;b style=&quot;font-size:13px&quot;&gt;📐 RepNCSPELAN4 Internal Structure&lt;/b&gt;&lt;br&gt;&lt;i&gt;(used in both FPN &amp;amp; PAN Fuse Blocks)&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="80" y="415" width="300" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- RepNCSPELAN4 internal diagram -->
+        <mxCell id="r_cvin" value="&lt;b&gt;Input&lt;/b&gt;&lt;br&gt;x ∈ ℝ^(B,C,H,W)&lt;br&gt;C=128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="460" width="72" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_cv1" value="&lt;b&gt;cv1&lt;/b&gt;&lt;br&gt;Conv1×1&lt;br&gt;C→2C (256)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="155" y="462" width="75" height="46" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_split" value="&lt;b&gt;Split&lt;/b&gt;&lt;br&gt;chunk(2,1)&lt;br&gt;y₀, y₁" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="255" y="465" width="72" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_cv2" value="&lt;b&gt;cv2&lt;/b&gt;&lt;br&gt;CSPLayer2(n=2)&lt;br&gt;C/2→c₄(22)&lt;br&gt;+ Conv3×3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1;fontSize=7;" vertex="1" parent="1">
+          <mxGeometry x="255" y="520" width="92" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_cv3" value="&lt;b&gt;cv3&lt;/b&gt;&lt;br&gt;CSPLayer2(n=2)&lt;br&gt;c₄(22)→c₄(22)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1;fontSize=7;" vertex="1" parent="1">
+          <mxGeometry x="370" y="520" width="86" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_cat" value="&lt;b&gt;Concat&lt;/b&gt;&lt;br&gt;[y₀,y₂,y₃]&lt;br&gt;dim=1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="305" y="600" width="72" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_cv4" value="&lt;b&gt;cv4&lt;/b&gt;&lt;br&gt;Conv1×1&lt;br&gt;(C+2c₄)→C&lt;br&gt;(128+44)→128" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="305" y="660" width="85" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_out" value="&lt;b&gt;Output&lt;/b&gt;&lt;br&gt;ℝ^(B,128,H,W)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="665" width="72" height="42" as="geometry"/>
+        </mxCell>
+
+        <!-- Internal arrows -->
+        <mxCell id="ra1" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="r_cvin" target="r_cv1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ra2" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="r_cv1" target="r_split" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ra3" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="r_split" target="r_cv2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ra4" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="r_cv2" target="r_cv3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ra5" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="r_cv3" target="r_cat" parent="1"><mxGeometry relative="1" as="geometry">
+          <Array as="points"><mxPoint x="413" y="597"/></Array></mxGeometry></mxCell>
+        <mxCell id="ra6" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="r_cat" target="r_cv4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ra7" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;" edge="1" source="r_cv4" target="r_out" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- y0 direct path to cat -->
+        <mxCell id="ra_y0" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;endArrow=block;endFill=1;dashed=1;dashPattern=3 2;" edge="1" source="r_split" target="r_cat" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="235" y="620"/><mxPoint x="280" y="620"/></Array></mxGeometry></mxCell>
+        <mxCell id="ra_y0_lbl" value="y₀ (skip)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=7;fontColor=#888;" vertex="1" parent="1">
+          <mxGeometry x="225" y="598" width="50" height="14" as="geometry"/>
+        </mxCell>
+
+        <!-- CSPLayer2 detail inside cv2/cv3 -->
+        <mxCell id="cspl_note" value="&lt;b&gt;CSPLayer2 internal:&lt;/b&gt; Conv1x1(C→2hidden) → chunk → VGGBlock(hidden)×n + skip → Conv1x1(hidden→out)" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=7;fontColor=#666;backgroundColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="55" y="720" width="380" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== LEGEND ==================== -->
+        <mxCell id="leg_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#333;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="95" width="55" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1240" y="118" width="18" height="13" as="geometry"/></mxCell>
+        <mxCell id="leg1t" value="Input / Output Feature" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1263" y="116" width="115" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1240" y="138" width="18" height="13" as="geometry"/></mxCell>
+        <mxCell id="leg2t" value="Projection / Conv Layer" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1263" y="136" width="115" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1240" y="158" width="18" height="13" as="geometry"/></mxCell>
+        <mxCell id="leg3t" value="AIFI / Attention Module" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1263" y="156" width="125" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1240" y="178" width="18" height="13" as="geometry"/></mxCell>
+        <mxCell id="leg4t" value="Upsample / SCDown" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1263" y="176" width="100" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg5" value="" style="shape=hexagon;perimeter=hexagonPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=10;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1240" y="198" width="20" height="15" as="geometry"/></mxCell>
+        <mxCell id="leg5t" value="SUM Fusion (⊕)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1265" y="196" width="95" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg6" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1240" y="218" width="18" height="13" as="geometry"/></mxCell>
+        <mxCell id="leg6t" value="FPN Fuse Block" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1263" y="216" width="90" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg7" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1395" y="118" width="18" height="13" as="geometry"/></mxCell>
+        <mxCell id="leg7t" value="PAN Fuse Block" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1418" y="116" width="90" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg8" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1395" y="138" width="18" height="13" as="geometry"/></mxCell>
+        <mxCell id="leg8t" value="Lateral Convolution" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1418" y="136" width="105" height="16" as="geometry"/></mxCell>
+        <mxCell id="leg9" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1.5;endArrow=block;endFill=1;dashed=1;dashPattern=3 2;" edge="1" source="leg9s" target="leg9e" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="leg9s" value="" style="endArrow=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" vertex="1" parent="1"><mxGeometry x="1395" y="158" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="leg9e" value="" style="endArrow=none;html=1;" vertex="1" parent="1"><mxGeometry x="1425" y="158" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="leg9t" value="Cross-stage Connection" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1"><mxGeometry x="1440" y="156" width="120" height="16" as="geometry"/></mxCell>
+
+        <!-- Data flow annotation -->
+        <mxCell id="flow_note" value="&lt;b&gt;Data Flow Summary:&lt;/b&gt;&lt;br&gt;P2(256) P3(512) P4(1024) → Proj(→128) → AIFI@P3 → FPN Top-Down(Lat+Up+Σ+Fuse×2) → PAN Bottom-Up(SCDown+Σ+Fuse×2) → Out[128,128,128]" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#444;backgroundColor=#f0f0f0;rounded=1;spacing=5;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="200" width="245" height="70" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

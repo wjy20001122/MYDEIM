@@ -5,8 +5,8 @@ __include__: [
   '../base/optimizer.yml',
   '../base/deimv2.yml'
 ]
-#HGNetv2+bifpn+EMA+2d
-output_dir: ./outputs/deimv2_hgnetv2_lite_pest2
+#ECA
+output_dir: ./outputs/deimv2_hgnetv2_lite_pest4
 
 HGNetv2:
   name: 'B0'
@@ -14,9 +14,13 @@ HGNetv2:
   freeze_at: -1
   freeze_norm: False
   use_lab: True
-  # use_simam_stages: [1, 2, 3]
-#  custom_pretrained: 'weight/hgnetv2/coco.pth'
-  
+  use_simam_stages: [1, 2, 3]
+  use_sppcspc_stage: -1
+  use_c2f_stages: [1]
+  c2f_n: 1
+  c2f_e: 0.25
+  c2f_lightweight: True
+  agg_type: 'se'
 DEIM:
   backbone: HGNetv2
   encoder: LiteEncoderBiFPN
@@ -28,7 +32,7 @@ LiteEncoderBiFPN:
   hidden_dim: 112
   num_outputs: 3
   output_strides: [8, 16, 32]
-  use_attention: 'ema'
+  use_attention: 'eca'
   use_global_fusion: True
   expansion: 0.34
   depth_mult: 0.5
@@ -55,7 +59,7 @@ DEIMTransformer:
 epoches: 84
 
 warmup_iter: 1500
-flat_epoch: 52
+flat_epoch: 60
 no_aug_epoch: 12
 lr_gamma: 0.5
 
@@ -64,23 +68,23 @@ optimizer:
   params:
     -
       params: '^(?=.*backbone)(?!.*norm|bn).*$'
-      lr: 0.0004
+      lr: 0.0008
     -
       params: '^(?=.*backbone)(?=.*norm|bn).*$'
-      lr: 0.0004
+      lr: 0.0008
       weight_decay: 0.
     -
       params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bn|bias)).*$'
       weight_decay: 0.
 
-  lr: 0.0008
+  lr: 0.00016
   betas: [0.9, 0.999]
   weight_decay: 0.0001
 
 eval_spatial_size: [640, 640]
 
 train_dataloader: 
-  total_batch_size: 16
+  total_batch_size: 12
   dataset: 
     transforms:
       ops:
@@ -98,29 +102,29 @@ train_dataloader:
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
         - {type: ConvertBoxes, fmt: 'cxcywh', normalize: True}
       policy:
-        epoch: [4, 52, 72]
-        ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop', 'GaussianNoise', 'GaussianBlur']
+        epoch: [4, 60, 72]
+        ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop', 'GaussianNoise']
       mosaic_prob: 0.5
 
   collate_fn:
     mixup_prob: 0.1
-    mixup_epochs: [4, 52]
+    mixup_epochs: [4, 60]
     copyblend_prob: 0.05
-    copyblend_epochs: [4, 52]
+    copyblend_epochs: [4, 60]
     stop_epoch: 72
     ema_restart_decay: 0.9999
     base_size: 640
     base_size_repeat: ~
 
 val_dataloader:
-  total_batch_size: 32
+  total_batch_size: 24
   dataset:
     transforms:
       ops:
         - {type: Resize, size: [640, 640]}
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
   shuffle: False
-  num_workers: 18
+  num_workers: 16
 
 DEIMCriterion:
   weight_dict: {loss_mal: 1.0, loss_bbox: 5.0, loss_giou: 2.0, loss_fgl: 0.15, loss_ddf: 1.5}
@@ -135,4 +139,4 @@ DEIMCriterion:
     gamma: 2.0
     change_matcher: True
     iou_order_alpha: 4.0
-    matcher_change_epoch: 60
+    matcher_change_epoch: 70

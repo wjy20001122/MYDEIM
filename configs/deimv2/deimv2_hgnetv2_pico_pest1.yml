@@ -34,7 +34,7 @@ LiteEncoder:
 
 DEIMTransformer:
   feat_channels: [112, 112]
-  feat_strides: [16, 32]
+  feat_strides: [8, 16]
   hidden_dim: 112
   num_levels: 2
   num_points: [4, 2]

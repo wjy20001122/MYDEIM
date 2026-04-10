@@ -1,0 +1,445 @@
+<mxfile host="app.diagrams.net" modified="2025-01-01T00:00:00.000Z" agent="Draw.io" version="21.0.0" type="device">
+  <diagram name="DEIMv2-BiFPN-Pico" id="deim2-bifpn">
+    <mxGraphModel dx="1800" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ==================== TITLE ==================== -->
+        <mxCell id="title" value="&lt;b&gt;DEIMv2-HGNetv2-B0 + LiteEncoderBiFPN (EMA) Architecture&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#666'&gt;Config: deimv2_hgnetv2_pico_pest_bifpn_eca7.yml | hidden_dim=112 | EMA Attention&lt;/span&gt;" style="text;html=1;fontSize=14;align=center;verticalAlign=top;fillColor=#FFFFFF;strokeColor=none;fontColor=#333;" vertex="1" parent="1">
+          <mxGeometry x="200" y="5" width="700" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== INPUT IMAGE ==================== -->
+        <mxCell id="input_img" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRTVGM0ZGIi8+PHRleHQgeD0iMzAiIHk9IjM1IiBmb250LXNpemU9IjEwIiBmaWxsPSIjOTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjY0MHg2NDwvdGV4dD48L3N2Zz4=;" vertex="1" parent="1">
+          <mxGeometry x="15" y="70" width="60" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="input_label" value="Input&lt;br&gt;&lt;span style='font-size:8px'&gt;(640×640)&lt;/span&gt;" style="text;html=1;fontSize=9;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="12" y="128" width="66" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== BACKBONE SECTION ==================== -->
+        <mxCell id="bb_bg" value="&lt;b&gt;HGNetv2-B0 Backbone&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:8px;color:#888'&gt;SimAM@S2,S3 · C2f@S1 · SPPFMicro@S3&lt;/span&gt;" style="rounded=1;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;dashed=1;dashPattern=8 4;fontSize=11;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="10" y="58" width="175" height="520" as="geometry"/>
+        </mxCell>
+
+        <!-- Stem Block -->
+        <mxCell id="stem" value="Stem Block&lt;br&gt;&lt;span style='font-size:8px;color:#555'&gt;Conv 3×3&lt;br&gt;(3→16→16)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;strokeWidth=1.5;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="28" y="95" width="85" height="42" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 1 with C2f -->
+        <mxCell id="stage1" value="Stage 1&lt;br&gt;HG-Block×1&lt;br&gt;&lt;span style='font-size:8px;color:#555'&gt;(64, 160, 160)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="28" y="155" width="90" height="44" as="geometry"/>
+        </mxCell>
+        <!-- C2f module after Stage 1 -->
+        <mxCell id="c2f_mod" value="C2f&lt;br&gt;&lt;span style='font-size:7px;color:#BF360C'&gt;n=1,e=0.25&lt;br&gt;lightweight&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFCC80;strokeColor=#E65100;strokeWidth=1.5;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="125" y="157" width="52" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 2 with SimAM -->
+        <mxCell id="stage2" value="Stage 2&lt;br&gt;HG-Block×1&lt;br&gt;&lt;span style='font-size:8px;color:#555'&gt;(256, 80, 80)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="28" y="218" width="90" height="44" as="geometry"/>
+        </mxCell>
+        <!-- SimAM at Stage 2 -->
+        <mxCell id="simam2" value="SimAM&lt;br&gt;&lt;span style='font-size:7px;color:#6A1B9A'&gt;parameter-free&lt;/span&gt;" style="rounded=1;html=1;fillColor=#E1BEE7;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="125" y="220" width="52" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 3 with SimAM + SPPFMicro -->
+        <mxCell id="stage3" value="Stage 3&lt;br&gt;HG-Block×2&lt;br&gt;&lt;span style='font-size:8px;color:#555'&gt;(512, 40, 40)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="28" y="280" width="90" height="44" as="geometry"/>
+        </mxCell>
+        <!-- SimAM at Stage 3 -->
+        <mxCell id="simam3" value="SimAM" style="rounded=1;fillColor=#E1BEE7;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="125" y="275" width="52" height="22" as="geometry"/>
+        </mxCell>
+        <!-- SPPFMicro at Stage 3 -->
+        <mxCell id="sppfmicro" value="SPPFMicro" style="rounded=1;fillColor=#FFECB3;strokeColor=#FF8F00;strokeWidth=1.5;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="125" y="301" width="52" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- Stage 4 -->
+        <mxCell id="stage4" value="Stage 4&lt;br&gt;HG-Block×1&lt;br&gt;&lt;span style='font-size:8px;color:#555'&gt;(1024,20,20)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="28" y="342" width="90" height="44" as="geometry"/>
+        </mxCell>
+
+        <!-- Feature output labels on backbone right side -->
+        <mxCell id="feat_p2" value="P₂/s=8&lt;br&gt;&lt;span style='font-size:7px'&gt;256ch&lt;/span&gt;" style="ellipse;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;strokeWidth=1;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="162" width="50" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="feat_p3" value="P₃/s=16&lt;br&gt;&lt;span style='font-size:7px'&gt;512ch&lt;/span&gt;" style="ellipse;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;strokeWidth=1;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="225" width="50" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="feat_p4" value="P₄/s=32&lt;br&gt;&lt;span style='font-size:7px'&gt;1024ch&lt;/span&gt;" style="ellipse;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;strokeWidth=1;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="350" width="50" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- Backbone internal connections -->
+        <mxCell id="e_stem_s1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.5;endArrow=block;strokeColor=#555;" edge="1" source="stem" target="stage1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_s1_c2f" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#E65100;dashed=1;" edge="1" source="stage1" target="c2f_mod" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_c2f_s2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.5;endArrow=block;strokeColor=#555;" edge="1" source="c2f_mod" target="stage2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_s2_simam2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#7B1FA2;dashed=1;" edge="1" source="stage2" target="simam2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_simam2_s3" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.5;endArrow=block;strokeColor=#555;" edge="1" source="simam2" target="stage3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_s3_simam3" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#7B1FA2;dashed=1;" edge="1" source="stage3" target="simam3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_simam3_sppf" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#FF8F00;dashed=1;" edge="1" source="simam3" target="sppfmicro" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_sppf_s4" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.5;endArrow=block;strokeColor=#555;" edge="1" source="sppfmicro" target="stage4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Input to stem -->
+        <mxCell id="e_input_stem" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.5;endArrow=block;strokeColor=#555;" edge="1" source="input_img" target="stem" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== ENCODER SECTION: LiteEncoderBiFPN ==================== -->
+        <mxCell id="enc_bg" value="&lt;b&gt;LiteEncoderBiFPN&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:8px;color:#888'&gt;hidden_dim=112 · EMA Attention · Global Fusion · Weighted Fusion&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FCE4EC;strokeColor=#C62828;strokeWidth=2;dashed=1;dashPattern=8 4;fontSize=11;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="195" y="58" width="420" height="520" as="geometry"/>
+        </mxCell>
+
+        <!-- Input Projection Row (top of encoder) -->
+        <mxCell id="proj_label" value="&lt;b&gt;Input Projection (Conv1×1+BN → 112ch)&lt;/b&gt;" style="text;html=1;fontSize=9;align=center;fillColor=none;strokeColor=none;fontColor=#C62828;" vertex="1" parent="1">
+          <mxGeometry x="260" y="88" width="250" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="proj_p2" value="Conv1×1&lt;br&gt;&lt;span style='font-size:7px'&gt;256→112&lt;/span&gt;" style="rounded=1;html=1;fillColor=#DCEDC8;strokeColor=#689F38;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="215" y="110" width="62" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="proj_p3" value="Conv1×1&lt;br&gt;&lt;span style='font-size:7px'&gt;512→112&lt;/span&gt;" style="rounded=1;html=1;fillColor=#DCEDC8;strokeColor=#689F38;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="370" y="110" width="62" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="proj_p4" value="Conv1×1&lt;br&gt;&lt;span style='font-size:7px'&gt;1024→112&lt;/span&gt;" style="rounded=1;html=1;fillColor=#DCEDC8;strokeColor=#689F38;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="525" y="110" width="65" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- Global Fusion on P4 -->
+        <mxCell id="global_fusion" value="Global Fusion&lt;br&gt;&lt;span style='font-size:7px;color:#0D47A1'&gt;AdaptiveAvgPool&lt;br&gt;+ Conv1×1&lt;/span&gt;" style="rounded=1;html=1;fillColor=#BBDEFB;strokeColor=#1565C0;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="525" y="148" width="65" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- BiFPN Block Section Label -->
+        <mxCell id="bifpn_label" value="&lt;b&gt;BiFPN Block ×1 (Weighted Fusion + EMA Attention)&lt;/b&gt;" style="text;html=1;fontSize=9;align=center;fillColor=none;strokeColor=none;fontColor=#C62828;" vertex="1" parent="1">
+          <mxGeometry x="240" y="192" width="330" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== BiFPN Top-down Path (TD) ===== -->
+        <mxCell id="td_label" value="▼ Top-Down Path" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;fontColor=#D84315;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="205" y="212" width="100" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- TD Step 1: P4 -> Upsample -> fuse with P3 -->
+        <mxCell id="td_up1" value="↑Upsample&lt;br&gt;&lt;span style='font-size:7px'&gt;×2 nearest&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFE0B2;strokeColor=#EF6C00;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="455" y="232" width="64" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="td_wff1" value="W-Fuse&lt;br&gt;&lt;span style='font-size:7px;color:#6A1B9A'&gt;Σ(wᵢ·xᵢ)/Σwᵢ&lt;/span&gt;" style="rounded=1;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="232" width="72" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="td_sepconv1" value="SepConv&lt;br&gt;&lt;span style='font-size:7px'&gt;DW+PW+BN&lt;/span&gt;" style="rounded=1;html=1;fillColor=#B2DFDB;strokeColor=#00796B;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="370" y="270" width="72" height="26" as="geometry"/>
+        </mxCell>
+
+        <!-- TD Step 2: P3_out -> Upsample -> fuse with P2 -->
+        <mxCell id="td_up2" value="↑Upsample&lt;br&gt;&lt;span style='font-size:7px'&gt;×2 nearest&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFE0B2;strokeColor=#EF6C00;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="300" y="270" width="56" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="td_wff2" value="W-Fuse" style="rounded=1;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="215" y="270" width="68" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="td_sepconv2" value="SepConv" style="rounded=1;html=1;fillColor=#B2DFDB;strokeColor=#00796B;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="215" y="304" width="68" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== BiFPN Bottom-up Path (BU) ===== -->
+        <mxCell id="bu_label" value="▲ Bottom-Up Path" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;fontColor=#1565C0;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="205" y="340" width="120" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- BU Step 1: P2_out -> Downsample -> fuse with [P3, P3_td] -->
+        <mxCell id="bu_down1" value="↓Down&lt;br&gt;&lt;span style='font-size:7px'&gt;Conv s=2&lt;/span&gt;" style="rounded=1;html=1;fillColor=#E1BEE7;strokeColor=#7B1FA2;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="220" y="338" width="54" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="bu_wff1" value="W-Fuse(3)&lt;br&gt;&lt;span style='font-size:7px;color:#6A1B9A'&gt;[P₃,P₃^td,P₂↓]&lt;/span&gt;" style="rounded=1;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="295" y="338" width="78" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="bu_sepconv1" value="SepConv" style="rounded=1;html=1;fillColor=#B2DFDB;strokeColor=#00796B;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="295" y="374" width="78" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- BU Step 2: P3_final -> Downsample -> fuse with P4 -->
+        <mxCell id="bu_down2" value="↓Down&lt;br&gt;&lt;span style='font-size:7px'&gt;Conv s=2&lt;/span&gt;" style="rounded=1;html=1;fillColor=#E1BEE7;strokeColor=#7B1FA2;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="395" y="374" width="54" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="bu_wff2" value="W-Fuse" style="rounded=1;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="468" y="374" width="68" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="bu_sepconv2" value="SepConv" style="rounded=1;html=1;fillColor=#B2DFDB;strokeColor=#00796B;strokeWidth=1;fontSize=8;" vertex="1" parent="1">
+          <mxGeometry x="468" y="406" width="68" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== EMA Attention on outputs ===== -->
+        <mxCell id="ema_label" value="&lt;b&gt;EMA Attention (on each output)&lt;/b&gt;" style="text;html=1;fontSize=8;align=center;fillColor=none;strokeColor=none;fontColor=#BF360C;" vertex="1" parent="1">
+          <mxGeometry x="255" y="440" width="230" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ema_p2" value="EMA Attn&lt;br&gt;&lt;span style='font-size:7px;color:#6A1B9A'&gt;avg+max pool&lt;br&gt;1D Conv α-fuse&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFCCBC;strokeColor=#D84315;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="212" y="460" width="74" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="ema_p3" value="EMA Attn" style="rounded=1;html=1;fillColor=#FFCCBC;strokeColor=#D84315;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="460" width="74" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="ema_p4" value="EMA Attn" style="rounded=1;html=1;fillColor=#FFCCBC;strokeColor=#D84315;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="528" y="460" width="74" height="38" as="geometry"/>
+        </mxCell>
+
+        <!-- Position Embedding -->
+        <mxCell id="pos_embed" value="+ PosEmbed&lt;br&gt;&lt;span style='font-size:7px;color:#0D47A1'&gt;2D sincos&lt;br&gt;T=10000&lt;/span&gt;" style="rounded=1;html=1;fillColor=#E8EAF6;strokeColor=#3949AB;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="355" y="510" width="75" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- Encoder output labels -->
+        <mxCell id="enc_out_p2" value="Out₂&lt;br&gt;&lt;span style='font-size:7px'&gt;s=8,112ch&lt;/span&gt;" style="ellipse;html=1;fillColor=#FFCDD2;strokeColor=#C62828;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="210" y="555" width="62" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="enc_out_p3" value="Out₃&lt;br&gt;&lt;span style='font-size:7px'&gt;s=16,112ch&lt;/span&gt;" style="ellipse;html=1;fillColor=#FFCDD2;strokeColor=#C62828;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="375" y="555" width="62" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="enc_out_p4" value="Out₄&lt;br&gt;&lt;span style='font-size:7px'&gt;s=32,112ch&lt;/span&gt;" style="ellipse;html=1;fillColor=#FFCDD2;strokeColor=#C62828;strokeWidth=1.5;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="535" y="555" width="62" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- Encoder internal connections - Input projection -->
+        <mxCell id="e_p2_proj" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#689F38;" edge="1" source="feat_p2" target="proj_p2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p3_proj" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#689F38;" edge="1" source="feat_p3" target="proj_p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p4_proj" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#689F38;" edge="1" source="feat_p4" target="proj_p4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Proj P4 -> Global Fusion -->
+        <mxCell id="e_p4_gf" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#1565C0;dashed=1;" edge="1" source="proj_p4" target="global_fusion" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Global Fusion residual back to proj_p4 -->
+        <mxCell id="e_gf_res" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#1565C0;dashed=1;curved=1;" edge="1" source="global_fusion" target="proj_p4" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="166"/>
+              <mxPoint x="600" y="124"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- BiFPN Top-Down connections -->
+        <!-- P4 -> Upsample -> W-Fuse(P3, P4_up) -->
+        <mxCell id="e_p4_up1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#EF6C00;" edge="1" source="proj_p4" target="td_up1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_up1_wff1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#EF6C00;" edge="1" source="td_up1" target="td_wff1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p3_wff1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#7B1FA2;dashed=1;" edge="1" source="proj_p3" target="td_wff1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_wff1_conv1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#00796B;" edge="1" source="td_wff1" target="td_sepconv1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- P3_td -> Upsample -> W-Fuse(P2, P3_up) -->
+        <mxCell id="e_p3up_up2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#EF6C00;" edge="1" source="td_sepconv1" target="td_up2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_up2_wff2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#EF6C00;" edge="1" source="td_up2" target="td_wff2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p2_wff2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#7B1FA2;dashed=1;" edge="1" source="proj_p2" target="td_wff2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_wff2_conv2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#00796B;" edge="1" source="td_wff2" target="td_sepconv2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- BiFPN Bottom-up connections -->
+        <!-- P2_out -> Down -> W-Fuse(3 inputs) -->
+        <mxCell id="e_p2out_down1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#7B1FA2;" edge="1" source="td_sepconv2" target="bu_down1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_down1_wff1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#7B1FA2;" edge="1" source="bu_down1" target="bu_wff1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p3_bu1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#7B1FA2;dashed=1;" edge="1" source="proj_p3" target="bu_wff1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p3td_bu1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#00796B;dashed=1;" edge="1" source="td_sepconv1" target="bu_wff1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_wff1_convbu1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#00796B;" edge="1" source="bu_wff1" target="bu_sepconv1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- P3_final -> Down -> W-Fuse with P4 -->
+        <mxCell id="e_p3final_down2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#7B1FA2;" edge="1" source="bu_sepconv1" target="bu_down2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_down2_wff2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#7B1FA2;" edge="1" source="bu_down2" target="bu_wff2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p4_bu2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#7B1FA2;dashed=1;" edge="1" source="proj_p4" target="bu_wff2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_wff2_convbu2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#00796B;" edge="1" source="bu_wff2" target="bu_sepconv2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- To EMA Attention -->
+        <mxCell id="e_p2_ema" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#D84315;" edge="1" source="td_sepconv2" target="ema_p2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p3_ema" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#D84315;" edge="1" source="bu_sepconv1" target="ema_p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_p4_ema" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.2;endArrow=block;strokeColor=#D84315;" edge="1" source="bu_sepconv2" target="ema_p4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- EMA -> Position Embedding -> Output -->
+        <mxCell id="e_ema_pos" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1;endArrow=block;strokeColor=#3949AB;dashed=1;" edge="1" source="ema_p3" target="pos_embed" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_ema2_out" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#C62828;" edge="1" source="ema_p2" target="enc_out_p2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_ema3_out" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#C62828;" edge="1" source="ema_p3" target="enc_out_p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_ema4_out" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#C62828;" edge="1" source="ema_p4" target="enc_out_p4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== DECODER SECTION ==================== -->
+        <mxCell id="dec_bg" value="&lt;b&gt;DEIM Transformer Decoder&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:8px;color:#888'&gt;num_layers=3 · nhead=8 · num_queries=300 · dim_ffn=320&lt;/span&gt;" style="rounded=1;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;dashed=1;dashPattern=8 4;fontSize=11;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="630" y="58" width="310" height="520" as="geometry"/>
+        </mxCell>
+
+        <!-- Query Embedding -->
+        <mxCell id="query_emb" value="Query Embedding&lt;br&gt;&lt;span style='font-size:8px;color:#555'&gt;300 queries&lt;br&gt;learnable pos&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFCDD2;strokeColor=#C62828;strokeWidth=1.5;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="695" y="92" width="100" height="46" as="geometry"/>
+        </mxCell>
+
+        <!-- 3-scale feats input label -->
+        <mxCell id="feats_in_dec" value="3-scale feats →" style="text;html=1;fontSize=9;align=center;fillColor=none;strokeColor=none;fontColor=#2E7D32;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="650" y="145" width="100" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- Decoder Layer 1 -->
+        <mxCell id="dec_layer1" value="Decoder Layer 1&lt;br&gt;&lt;hr&gt;&lt;span style='font-size:8px'&gt;Self-Attn&lt;br&gt;Cross-Attn (D-FFN)&lt;br&gt;num_points=[4,4,2]&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="670" y="170" width="140" height="64" as="geometry"/>
+        </mxCell>
+
+        <!-- Decoder Layer 2 -->
+        <mxCell id="dec_layer2" value="Decoder Layer 2&lt;br&gt;&lt;hr&gt;&lt;span style='font-size:8px'&gt;Self-Attn + Cross-Attn&lt;br&gt;D-FFN (320-dim)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="670" y="250" width="140" height="54" as="geometry"/>
+        </mxCell>
+
+        <!-- Decoder Layer 3 -->
+        <mxCell id="dec_layer3" value="Decoder Layer 3&lt;br&gt;&lt;hr&gt;&lt;span style='font-size:8px'&gt;Self-Attn + Cross-Attn&lt;br&gt;D-FFN + Output&lt;/span&gt;" style="rounded=1;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="670" y="322" width="140" height="54" as="geometry"/>
+        </mxCell>
+
+        <!-- Decoder internal connections -->
+        <mxCell id="e_query_d1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#C62828;" edge="1" source="query_emb" target="dec_layer1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_d1_d2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#F57F17;" edge="1" source="dec_layer1" target="dec_layer2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_d2_d3" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#F57F17;" edge="1" source="dec_layer2" target="dec_layer3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Cross-attention from encoder features to decoder layers (dashed lines) -->
+        <mxCell id="e_enc_d1" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=0.8;endArrow=open;strokeColor=#2E7D32;dashed=1;dashPattern=4 4;" edge="1" source="enc_out_p3" target="dec_layer1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="400"/>
+              <mxPoint x="600" y="200"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_enc_d2" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=0.8;endArrow=open;strokeColor=#2E7D32;dashed=1;dashPattern=4 4;" edge="1" source="enc_out_p3" target="dec_layer2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_enc_d3" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=0.8;endArrow=open;strokeColor=#2E7D32;dashed=1;dashPattern=4 4;" edge="1" source="enc_out_p3" target="dec_layer3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Classification Head -->
+        <mxCell id="cls_head" value="Classification Head&lt;br&gt;&lt;hr&gt;&lt;span style='font-size:8px'&gt;4 classes&lt;br&gt;Focal Loss (α=0.25)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="660" y="402" width="115" height="52" as="geometry"/>
+        </mxCell>
+
+        <!-- Regression Head -->
+        <mxCell id="reg_head" value="Regression Head&lt;br&gt;&lt;hr&gt;&lt;span style='font-size:8px'&gt;L1 Loss (w=5.0)&lt;br&gt;GIoU Loss (w=2.0)&lt;br&gt;DFL (w=1.5)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;strokeWidth=1.5;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="790" y="402" width="120" height="62" as="geometry"/>
+        </mxCell>
+
+        <!-- Decoder to heads -->
+        <mxCell id="e_d3_cls" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#388E3C;" edge="1" source="dec_layer3" target="cls_head" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_d3_reg" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#1976D2;" edge="1" source="dec_layer3" target="reg_head" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== OUTPUT SECTION ==================== -->
+        <mxCell id="output_box" value="&lt;b&gt;Output&lt;/b&gt;&lt;br&gt;&lt;hr&gt;&lt;span style='font-size:9px'&gt;Labels: (B, N)&lt;br&gt;Boxes: (B, N, 4)&lt;br&gt;Scores: (B, N)&lt;/span&gt;" style="rounded=1;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=2;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="700" y="495" width="115" height="64" as="geometry"/>
+        </mxCell>
+
+        <!-- Heads to output -->
+        <mxCell id="e_cls_out" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#7B1FA2;" edge="1" source="cls_head" target="output_box" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_reg_out" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=1.3;endArrow=block;strokeColor=#7B1FA2;" edge="1" source="reg_head" target="output_box" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ==================== LEGEND ==================== -->
+        <mxCell id="legend_bg" value="" style="rounded=1;fillColor=#FAFAFA;strokeColor=#BDBDBD;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="955" y="70" width="180" height="240" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_title" value="&lt;b&gt;Legend / 图例&lt;/b&gt;" style="text;html=1;fontSize=10;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="970" y="76" width="150" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg1" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="98" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg1t" value="Backbone (HGNetv2)" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="97" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg2" value="" style="rounded=1;fillColor=#FCE4EC;strokeColor=#C62828;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="118" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg2t" value="Encoder (BiFPN)" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="117" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg3" value="" style="rounded=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="138" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg3t" value="Decoder (Transformer)" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="137" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg4" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#D84315;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="158" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg4t" value="EMA Attention" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="157" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg5" value="" style="rounded=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="178" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg5t" value="Weighted Fusion (W-Fuse)" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="177" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg6" value="" style="rounded=1;fillColor=#B2DFDB;strokeColor=#00796B;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="198" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg6t" value="Separable Conv (DW+PW)" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="197" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg7" value="" style="rounded=1;fillColor=#E1BEE7;strokeColor=#7B1FA2;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="218" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg7t" value="SimAM / Downsample" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="217" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg8" value="" style="rounded=1;fillColor=#FFCC80;strokeColor=#E65100;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="238" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg8t" value="C2f / Upsample" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="237" width="130" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg9" value="" style="rounded=1;fillColor=#FFECB3;strokeColor=#FF8F00;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="258" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg9t" value="SPPFMicro / Global Fusion" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="257" width="135" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="leg10" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#3949AB;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="278" width="18" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg10t" value="Position Embedding (sincos)" style="text;html=1;fontSize=8;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="994" y="277" width="135" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== CONFIG SUMMARY BOX ==================== -->
+        <mxCell id="config_bg" value="" style="rounded=1;fillColor=#FFFDE7;strokeColor=#FBC02D;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="955" y="325" width="180" height="245" as="geometry"/>
+        </mxCell>
+        <mxCell id="config_title" value="&lt;b&gt;Key Config Parameters&lt;/b&gt;" style="text;html=1;fontSize=10;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="965" y="330" width="160" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg_text" value="&lt;span style='font-size:8px'&gt;
+&lt;b&gt;HGNetv2:&lt;/b&gt; B0, return_idx=[1,2,3]
+  SimAM@stages=[2,3]
+  C2f@stages=[1] n=1 e=0.25
+  SPPFMicro@stage=3
+
+&lt;b&gt;Encoder:&lt;/b&gt; LiteEncoderBiFPN
+  in_ch=[256,512,1024]
+  hidden_dim=112
+  attention='ema'
+  global_fusion=True
+  expansion=0.34 depth=0.5
+
+&lt;b&gt;Decoder:&lt;/b&gt; DEIMTransformer
+  feat_ch=[112,112,112]
+  nhead=8 num_queries=300
+  dim_ffn=320 num_layers=3
+  num_points=[4,4,2]
+
+&lt;b&gt;Losses:&lt;/b&gt;
+  mal=1.0 bbox=5.0 giou=2.0
+  fgl=0.15 ddf=1.5
+&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=top;fillColor=none;strokeColor=none;spacingLeft=5;" vertex="1" parent="1">
+          <mxGeometry x="960" y="350" width="170" height="215" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

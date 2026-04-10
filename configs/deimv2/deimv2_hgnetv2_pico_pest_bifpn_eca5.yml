@@ -42,7 +42,7 @@ DEIMTransformer:
   feat_strides: [8, 16, 32]
   hidden_dim: 112
   num_levels: 3
-  num_points: [4, 2, 1]
+  num_points: [4, 4, 2]
   nhead: 8
 
   num_layers: 3
@@ -52,12 +52,11 @@ DEIMTransformer:
   dim_feedforward: 320
   share_bbox_head: True
   use_gateway: False
-
-epoches: 200
+epoches: 84
 
 warmup_iter: 1500
-flat_epoch: 80
-no_aug_epoch: 10
+flat_epoch: 50
+no_aug_epoch: 12
 lr_gamma: 0.5
 
 optimizer:
@@ -65,16 +64,16 @@ optimizer:
   params:
     -
       params: '^(?=.*backbone)(?!.*norm|bn).*$'
-      lr: 0.0008
+      lr: 0.0004
     -
       params: '^(?=.*backbone)(?=.*norm|bn).*$'
-      lr: 0.0008
+      lr: 0.0004
       weight_decay: 0.
     -
       params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bn|bias)).*$'
       weight_decay: 0.
 
-  lr: 0.0016
+  lr: 0.0008
   betas: [0.9, 0.999]
   weight_decay: 0.0001
 
@@ -88,6 +87,8 @@ train_dataloader:
         - {type: Mosaic, output_size: 320, rotation_range: 10, translation_range: [0.1, 0.1], scaling_range: [0.5, 1.5],
            probability: 1.0, fill_value: 0, use_cache: True, max_cached_images: 50, random_pop: True}
         - {type: RandomPhotometricDistort, p: 0.5}
+        - {type: GaussianNoise, mean: 0.0, std: 0.01, p: 0.3}
+        #- {type: GaussianBlur, kernel_size: 3, sigma: [0.1, 1.5], p: 0.05}
         - {type: RandomZoomOut, fill: 0}
         - {type: RandomIoUCrop, p: 0.8}
         - {type: SanitizeBoundingBoxes, min_size: 4}
@@ -97,16 +98,16 @@ train_dataloader:
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
         - {type: ConvertBoxes, fmt: 'cxcywh', normalize: True}
       policy:
-        epoch: [4, 100, 180]
-        ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop']
+        epoch: [4, 42, 72]
+        ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop', 'GaussianNoise', 'GaussianBlur']
       mosaic_prob: 0.5
 
   collate_fn:
     mixup_prob: 0.1
-    mixup_epochs: [4, 100]
+    mixup_epochs: [4, 42]
     copyblend_prob: 0.05
-    copyblend_epochs: [4, 100]
-    stop_epoch: 160
+    copyblend_epochs: [4, 42]
+    stop_epoch: 72
     ema_restart_decay: 0.9999
     base_size: 640
     base_size_repeat: ~
@@ -119,7 +120,7 @@ val_dataloader:
         - {type: Resize, size: [640, 640]}
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
   shuffle: False
-  num_workers: 16
+  num_workers: 18
 
 DEIMCriterion:
   weight_dict: {loss_mal: 1.0, loss_bbox: 5.0, loss_giou: 2.0, loss_fgl: 0.15, loss_ddf: 1.5}
@@ -134,4 +135,4 @@ DEIMCriterion:
     gamma: 2.0
     change_matcher: True
     iou_order_alpha: 4.0
-    matcher_change_epoch: 176
+    matcher_change_epoch: 60

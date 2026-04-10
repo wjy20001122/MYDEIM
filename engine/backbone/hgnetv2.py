@@ -13,6 +13,7 @@ Copyright (c) 2024 The D-FINE Authors. All Rights Reserved.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 import os
 from .common import FrozenBatchNorm2d
 from ..core import register
@@ -425,6 +426,21 @@ class EseModule(nn.Module):
         return torch.mul(identity, x)
 
 
+class ECAModule(nn.Module):
+    def __init__(self, chs, gamma=2, b=1):
+        super().__init__()
+        t = int(abs((math.log2(chs) / gamma) + (b / gamma)))
+        k_size = t if t % 2 else t + 1
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=k_size // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        y = self.avg_pool(x).squeeze(-1).transpose(-1, -2)
+        y = self.sigmoid(self.conv(y)).transpose(-1, -2).unsqueeze(-1)
+        return torch.mul(x, y)
+
+
 class HG_Block(nn.Module):
     def __init__(
             self,
@@ -489,6 +505,20 @@ class HG_Block(nn.Module):
             self.aggregation = nn.Sequential(
                 aggregation_squeeze_conv,
                 aggregation_excitation_conv,
+            )
+        elif agg == 'eca':
+            aggregation_conv = ConvBNAct(
+                total_chs,
+                out_chs,
+                kernel_size=1,
+                stride=1,
+                use_lab=use_lab,
+                act=act,
+            )
+            att = ECAModule(out_chs)
+            self.aggregation = nn.Sequential(
+                aggregation_conv,
+                att,
             )
         else:
             aggregation_conv = ConvBNAct(
@@ -721,6 +751,7 @@ class HGNetv2(nn.Module):
                  c2f_n=1,
                  c2f_e=0.5,
                  c2f_lightweight=False,
+                 agg_type='se',
                  custom_pretrained=None
                  ):
         super().__init__()
@@ -732,6 +763,7 @@ class HGNetv2(nn.Module):
         self.use_sppflite_stage = use_sppflite_stage
         self.use_sppfmicro_stage = use_sppfmicro_stage
         self.use_c2f_stages = use_c2f_stages if use_c2f_stages is not None else []
+        self.agg_type = agg_type
 
         stem_channels = self.arch_configs[name]['stem_channels']
         stage_config = self.arch_configs[name]['stage_config']
@@ -765,7 +797,8 @@ class HGNetv2(nn.Module):
                     light_block,
                     kernel_size,
                     use_lab,
-                    act=act)
+                    act=act,
+                    agg=agg_type)
             )
 
         self.simam_modules = nn.ModuleList()

@@ -5,7 +5,7 @@ __include__: [
   '../base/optimizer.yml',
   '../base/deimv2.yml'
 ]
-#重跑
+#重跑保留
 output_dir: ./outputs/deimv2_hgnetv2_lite_pest
 
 HGNetv2:
