@@ -36,6 +36,50 @@ Normalize = register()(T.Normalize)
 
 
 @register()
+class GaussianNoise(T.Transform):
+    _transformed_types = (
+        Image,
+        Video,
+    )
+    def __init__(self, mean=0.0, std=0.1, p=0.5) -> None:
+        super().__init__()
+        self.mean = mean
+        self.std = std
+        self.p = p
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if torch.rand(1).item() >= self.p:
+            return inpt
+        noise = torch.randn_like(inpt) * self.std + self.mean
+        return torch.clamp(inpt + noise, 0.0, 1.0)
+
+
+@register()
+class GaussianBlur(T.Transform):
+    _transformed_types = (
+        PIL.Image.Image,
+        Image,
+        Video,
+    )
+    def __init__(self, kernel_size=3, sigma=(0.1, 2.0), p=0.5) -> None:
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.sigma = sigma
+        self.p = p
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if torch.rand(1).item() >= self.p:
+            return inpt
+        if isinstance(inpt, PIL.Image.Image):
+            import torchvision.transforms.functional as TF
+            sigma_val = self.sigma if isinstance(self.sigma, (int, float)) else torch.rand(1).item() * (self.sigma[1] - self.sigma[0]) + self.sigma[0]
+            return TF.gaussian_blur(inpt, self.kernel_size, [sigma_val, sigma_val])
+        else:
+            sigma_val = self.sigma if isinstance(self.sigma, (int, float)) else torch.rand(1).item() * (self.sigma[1] - self.sigma[0]) + self.sigma[0]
+            return F.gaussian_blur(inpt, self.kernel_size, [sigma_val, sigma_val])
+
+
+@register()
 class EmptyTransform(T.Transform):
     def __init__(self, ) -> None:
         super().__init__()

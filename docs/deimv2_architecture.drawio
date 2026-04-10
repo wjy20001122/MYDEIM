@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-01-01T00:00:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram name="DEIMv2-Architecture" id="deimv2-arch">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="DEIMv2 Network Architecture for Pest Detection" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="400" y="10" width="600" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Input Image -->
+        <mxCell id="input" value="Input Image&#xa;(B, 3, 640, 640)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="140" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Backbone Section -->
+        <mxCell id="backbone_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="170" width="200" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="backbone_title" value="HGNetv2-Pico Backbone" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="55" y="175" width="150" height="25" as="geometry" />
+        </mxCell>
+        
+        <!-- Stem -->
+        <mxCell id="stem" value="Stem Block&#xa;Conv 3×3&#xa;(3→48→96)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="210" width="100" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Stage 1 -->
+        <mxCell id="stage1" value="Stage 1&#xa;HG-Block×6&#xa;(96→128)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="280" width="100" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Stage 2 -->
+        <mxCell id="stage2" value="Stage 2&#xa;HG-Block×6&#xa;(128→256)&#xa;↓ stride 8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="350" width="100" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Stage 3 -->
+        <mxCell id="stage3" value="Stage 3&#xa;HG-Block×6&#xa;(256→512)&#xa;↓ stride 16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="430" width="100" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Stage 4 -->
+        <mxCell id="stage4" value="Stage 4&#xa;HG-Block×6&#xa;(512→1024)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="510" width="100" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Encoder Section -->
+        <mxCell id="encoder_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="300" width="220" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="encoder_title" value="LiteEncoder" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="340" y="305" width="100" height="25" as="geometry" />
+        </mxCell>
+        
+        <!-- Input Projection -->
+        <mxCell id="proj1" value="Proj 1&#xa;256→112&#xa;stride 8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="295" y="340" width="70" height="45" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proj2" value="Proj 2&#xa;512→112&#xa;stride 16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="295" y="420" width="70" height="45" as="geometry" />
+        </mxCell>
+        
+        <!-- Encoder Layers -->
+        <mxCell id="enc_layers" value="Encoder Layers × N&#xa;hidden_dim=112&#xa;expansion=0.34&#xa;depth_mult=0.5&#xa;act=SiLU" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="385" y="360" width="100" height="90" as="geometry" />
+        </mxCell>
+        
+        <!-- Decoder Section -->
+        <mxCell id="decoder_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="240" width="320" height="370" as="geometry" />
+        </mxCell>
+        <mxCell id="decoder_title" value="DEIMTransformer Decoder" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="620" y="245" width="180" height="25" as="geometry" />
+        </mxCell>
+        
+        <!-- Query Embedding -->
+        <mxCell id="query_emb" value="Query Embedding&#xa;(200 queries)&#xa;learnable pos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="575" y="275" width="110" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Decoder Layers -->
+        <mxCell id="dec_layer1" value="Decoder Layer 1&#xa;─────────────&#xa;Self-Attn (8 heads)&#xa;Cross-Attn (D-FFN)&#xa;num_points=[4,2]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="705" y="270" width="160" height="70" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="dec_layer2" value="Decoder Layer 2&#xa;─────────────&#xa;Self-Attn + Cross-Attn&#xa;D-FFN (320 dim)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="705" y="355" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="dec_layer3" value="Decoder Layer 3&#xa;─────────────&#xa;Self-Attn + Cross-Attn&#xa;D-FFN + Output" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="705" y="430" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Output Heads -->
+        <mxCell id="cls_head" value="Classification Head&#xa;─────────────&#xa;4 classes&#xa;Focal Loss (α=0.25)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="575" y="430" width="110" height="55" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="bbox_head" value="Regression Head&#xa;─────────────&#xa;L1 Loss (w=5.0)&#xa;GIoU Loss (w=2.0)&#xa;DFL (w=1.5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="575" y="500" width="115" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Output -->
+        <mxCell id="output" value="Output&#xa;─────────&#xa;Labels: (B, N)&#xa;Boxes: (B, N, 4)&#xa;Scores: (B, N)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="720" y="520" width="130" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Feature Maps -->
+        <mxCell id="feat1" value="Feature Map 1&#xa;(B, 256, 80, 80)&#xa;stride=8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="230" y="355" width="35" height="45" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feat2" value="Feature Map 2&#xa;(B, 512, 40, 40)&#xa;stride=16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="230" y="420" width="35" height="45" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="enc_out" value="Encoded Features&#xa;(B, 2, H/stride, W/stride, C)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="515" y="365" width="35" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrows -->
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="input" target="stem">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="stem" target="stage1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="stage1" target="stage2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="stage2" target="stage3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="stage3" target="stage4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#6c8ebf;" edge="1" parent="1" source="stage2" target="feat1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#6c8ebf;" edge="1" parent="1" source="stage3" target="feat2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="feat1" target="proj1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="feat2" target="proj2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="proj1" target="enc_layers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="proj2" target="enc_layers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="enc_layers" target="enc_out">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="enc_out" target="dec_layer1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="dec_layer1" target="dec_layer2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="dec_layer2" target="dec_layer3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow16" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="dec_layer3" target="cls_head">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow17" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="dec_layer3" target="bbox_head">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow18" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="cls_head" target="output">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow19" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" edge="1" parent="1" source="bbox_head" target="output">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow20" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#b85450;" edge="1" parent="1" source="query_emb" target="dec_layer1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Parameter Table -->
+        <mxCell id="table_title" value="Model Parameters Summary" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="920" y="80" width="200" height="25" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="table_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="900" y="115" width="260" height="350" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="param1" value="Component | Value&#xa;─────────|──────────&#xa;Backbone | HGNetv2-Pico&#xa;Encoder | LiteEncoder&#xa;Decoder | DEIMTransformer&#xa;Hidden Dim | 112&#xa;Num Queries | 200&#xa;Num Layers | 3&#xa;Num Heads | 8&#xa;FFN Dim | 320&#xa;Num Levels | 2&#xa;Feat Strides | [8, 16]&#xa;Num Points | [4, 2]&#xa;Total Params | ~2.7M&#xa;FLOPs | ~7.0G" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="915" y="125" width="230" height="330" as="geometry" />
+        </mxCell>
+        
+        <!-- Loss Function Box -->
+        <mxCell id="loss_title" value="Loss Functions" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="940" y="480" width="120" height="25" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="loss_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="900" y="515" width="260" height="145" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="loss_content" value="Loss Type | Weight&#xa;──────────|────────&#xa;MAL (Matching) | 1.0&#xa;L1 BBox | 5.0&#xa;GIoU | 2.0&#xa;FGL (Focus) | 0.15&#xa;DDF (Distribution) | 1.5&#xa;&#xa;Matcher: Hungarian&#xa;α=0.25, γ=2.0" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="915" y="525" width="230" height="125" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

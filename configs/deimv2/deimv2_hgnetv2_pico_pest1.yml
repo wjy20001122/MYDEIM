@@ -3,45 +3,51 @@ __include__: [
   '../runtime.yml',
   '../base/dataloader.yml',
   '../base/optimizer.yml',
-  '../base/deimv2.yml'
+  '../base/deimv2.yml',
 ]
-#基础模型
-output_dir: ./outputs/deimv2_hgnetv2_n_pest
+#轻量模型
+output_dir: ./outputs/deimv2_hgnetv2_pico_pest
+
+DEIM:
+  encoder: LiteEncoder
+  decoder: DEIMTransformer
 
 HGNetv2:
-  name: 'B0'
-  return_idx: [1, 2, 3]
+  name: 'Pico'
+  return_idx: [1, 2]
   freeze_at: -1
   freeze_norm: False
   use_lab: True
 
-HybridEncoder:
-  in_channels: [256, 512, 1024]
-  feat_strides: [8, 16, 32]
+LiteEncoder:
+  in_channels: [256, 512]
+  feat_strides: [8, 16]
 
   # intra
-  hidden_dim: 128
-  use_encoder_idx: [1]
-  dim_feedforward: 512
+  hidden_dim: 112
 
   # cross
   expansion: 0.34
   depth_mult: 0.5
+  act: 'silu'
 
-  version: 'dfine'
 
 DEIMTransformer:
-  feat_channels: [128, 128, 128]
-  feat_strides: [8, 16, 32]
-  hidden_dim: 128
-  num_levels: 3
-  num_points: [4, 4, 2]
+  feat_channels: [112, 112]
+  feat_strides: [16, 32]
+  hidden_dim: 112
+  num_levels: 2
+  num_points: [4, 2]
 
   num_layers: 3
   eval_idx: -1
+  num_queries: 300
 
   # FFN
-  dim_feedforward: 512
+  dim_feedforward: 320
+
+
+  dim_feedforward: 320
   share_bbox_head: True
   use_gateway: False
 epoches: 84
@@ -112,7 +118,7 @@ val_dataloader:
         - {type: Resize, size: [640, 640]}
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
   shuffle: False
-  num_workers: 18
+  num_workers: 16
 
 DEIMCriterion:
   weight_dict: {loss_mal: 1.0, loss_bbox: 5.0, loss_giou: 2.0, loss_fgl: 0.15, loss_ddf: 1.5}

@@ -97,6 +97,41 @@ class ECALayer(nn.Module):
         return x * y.expand_as(x)
 
 
+class EMAAttention(nn.Module):
+    """
+    Exponential Moving Average Attention (EMA)
+    使用指数移动平均进行通道注意力加权
+    特点: 自适应衰减因子，对重要通道赋予更高权重
+    """
+    def __init__(self, channels, gamma=2, b=1):
+        super().__init__()
+        self.channels = channels
+        t = int(abs((math.log2(channels) / gamma) + (b / gamma)))
+        k_size = t if t % 2 else t + 1
+
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+
+        self.conv1 = nn.Conv1d(1, 1, kernel_size=k_size, padding=k_size // 2, bias=False)
+        self.conv2 = nn.Conv1d(1, 1, kernel_size=k_size, padding=k_size // 2, bias=False)
+
+        self.alpha = nn.Parameter(torch.zeros(1))
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = self.avg_pool(x).squeeze(-1).transpose(-1, -2)
+        max_out = self.max_pool(x).squeeze(-1).transpose(-1, -2)
+
+        avg_attn = self.sigmoid(self.conv1(avg_out))
+        max_attn = self.sigmoid(self.conv2(max_out))
+
+        alpha = torch.sigmoid(self.alpha)
+        attn = alpha * avg_attn + (1 - alpha) * max_attn
+        attn = attn.transpose(-1, -2).unsqueeze(-1)
+
+        return x * attn.expand_as(x)
+
+
 class SpatialAttention(nn.Module):
     """
     空间注意力机制
@@ -187,6 +222,9 @@ class BiFPNBlock(nn.Module):
             elif use_attention == 'spatial':
                 self.attention_p3 = SpatialAttention()
                 self.attention_p4 = SpatialAttention()
+            elif use_attention == 'ema':
+                self.attention_p3 = EMAAttention(channels)
+                self.attention_p4 = EMAAttention(channels)
             else:
                 self.attention_p3 = nn.Identity()
                 self.attention_p4 = nn.Identity()
@@ -217,6 +255,10 @@ class BiFPNBlock(nn.Module):
                 self.attention_p3 = SpatialAttention()
                 self.attention_p4 = SpatialAttention()
                 self.attention_p5 = SpatialAttention()
+            elif use_attention == 'ema':
+                self.attention_p3 = EMAAttention(channels)
+                self.attention_p4 = EMAAttention(channels)
+                self.attention_p5 = EMAAttention(channels)
             else:
                 self.attention_p3 = nn.Identity()
                 self.attention_p4 = nn.Identity()
@@ -226,17 +268,17 @@ class BiFPNBlock(nn.Module):
         p4_up = F.interpolate(p4, scale_factor=2, mode='nearest')
         p3_fused = self.w1_p3([p3, p4_up])
         p3_out = self.fuse_p3(p3_fused)
-        p3_out = self.attention_p3(p3_out)
         
         p3_down = self.conv_down(p3_out)
         p4_fused = self.w1_p4([p4, p3_down])
         p4_out = self.fuse_p4(p4_fused)
-        p4_out = self.attention_p4(p4_out)
         
         p4_up_final = F.interpolate(p4_out, scale_factor=2, mode='nearest')
         p3_final = self.w2_p3([p3, p4_up, p4_up_final])
         p3_final = self.fuse_p3(p3_final)
+        
         p3_final = self.attention_p3(p3_final)
+        p4_out = self.attention_p4(p4_out)
         
         return p3_final, p4_out
     
@@ -244,21 +286,21 @@ class BiFPNBlock(nn.Module):
         p4_up = F.interpolate(p4, scale_factor=2, mode='nearest')
         p3_fused = self.w1_p4([p3, p4_up])
         p3_out = self.fuse_p4(p3_fused)
-        p3_out = self.attention_p4(p3_out)
         
         p3_up = F.interpolate(p3_out, scale_factor=2, mode='nearest')
         p2_fused = self.w1_p3([p2, p3_up])
         p2_out = self.fuse_p3(p2_fused)
-        p2_out = self.attention_p3(p2_out)
         
         p2_down = self.conv_down(p2_out)
         p3_fused2 = self.w2_p3([p3, p3_out, p2_down])
         p3_final = self.fuse_p3(p3_fused2)
-        p3_final = self.attention_p3(p3_final)
         
         p3_down = self.conv_down(p3_final)
         p4_fused = self.w1_p5([p4, p3_down])
         p4_final = self.fuse_p5(p4_fused)
+        
+        p2_out = self.attention_p3(p2_out)
+        p3_final = self.attention_p4(p3_final)
         p4_final = self.attention_p5(p4_final)
         
         return p2_out, p3_final, p4_final

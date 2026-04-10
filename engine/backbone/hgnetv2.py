@@ -32,6 +32,7 @@ class SimAM(nn.Module):
     Simple Attention Module - 零参数注意力
     论文: SimAM: A Simple, Parameter-Free Attention Module for CNNs
     对FPS几乎无影响，精度提升明显
+    带残差连接版本
     """
     def __init__(self, e_lambda=1e-4):
         super().__init__()
@@ -42,13 +43,97 @@ class SimAM(nn.Module):
         n = w * h - 1
         x_minus_mu_square = (x - x.mean(dim=[2, 3], keepdim=True)).pow(2)
         y = x_minus_mu_square / (4 * (x_minus_mu_square.sum(dim=[2, 3], keepdim=True) / n + self.e_lambda) + 0.5)
-        return x * torch.sigmoid(y)
+        attn = torch.sigmoid(y)
+        return x + x * attn
+
+
+class SPPF(nn.Module):
+    """
+    SPPF - Spatial Pyramid Pooling Fast
+    来自 YOLOv5/8，比SPPCSPC轻量5倍，效果相当
+    """
+    def __init__(self, in_channels, out_channels=None, act='relu'):
+        super().__init__()
+        if out_channels is None:
+            out_channels = in_channels
+        c_ = out_channels // 2
+        self.conv1 = nn.Conv2d(in_channels, c_, 1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c_)
+        self.act1 = get_activation(act)
+        self.mpool = nn.MaxPool2d(5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(c_ * 4, out_channels, 1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.act2 = get_activation(act)
+
+    def forward(self, x):
+        x = self.act1(self.bn1(self.conv1(x)))
+        y1 = self.mpool(x)
+        y2 = self.mpool(y1)
+        y3 = self.mpool(y2)
+        out = torch.cat([x, y1, y2, y3], dim=1)
+        return self.act2(self.bn2(self.conv2(out)))
+
+
+class SPPFLite(nn.Module):
+    """
+    SPPF-Lite - 超轻量版空间金字塔池化
+    - 中间通道减少到 c/4
+    - 池化次数减少到2次
+    - 参数量约为原版SPPF的 1/3
+    """
+    def __init__(self, in_channels, out_channels=None, act='relu'):
+        super().__init__()
+        if out_channels is None:
+            out_channels = in_channels
+        c_ = out_channels // 4
+        self.conv1 = nn.Conv2d(in_channels, c_, 1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c_)
+        self.act1 = get_activation(act)
+        self.mpool = nn.MaxPool2d(5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(c_ * 3, out_channels, 1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.act2 = get_activation(act)
+
+    def forward(self, x):
+        x = self.act1(self.bn1(self.conv1(x)))
+        y1 = self.mpool(x)
+        y2 = self.mpool(y1)
+        out = torch.cat([x, y1, y2], dim=1)
+        return self.act2(self.bn2(self.conv2(out)))
+
+
+class SPPFMicro(nn.Module):
+    """
+    SPPF-Micro - 极致轻量版空间金字塔池化
+    - 中间通道减少到 c/8
+    - 池化次数减少到1次
+    - 参数量约为原版SPPF的 1/6
+    """
+    def __init__(self, in_channels, out_channels=None, act='relu'):
+        super().__init__()
+        if out_channels is None:
+            out_channels = in_channels
+        c_ = out_channels // 8
+        self.conv1 = nn.Conv2d(in_channels, c_, 1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c_)
+        self.act1 = get_activation(act)
+        self.mpool = nn.MaxPool2d(5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(c_ * 2, out_channels, 1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.act2 = get_activation(act)
+
+    def forward(self, x):
+        x = self.act1(self.bn1(self.conv1(x)))
+        y1 = self.mpool(x)
+        out = torch.cat([x, y1], dim=1)
+        return self.act2(self.bn2(self.conv2(out)))
 
 
 class SPPCSPC(nn.Module):
     """
     SPPCSPC - Spatial Pyramid Pooling Cross Stage Partial Channel
     来自 YOLOv7，多尺度特征提取，对小目标检测有效
+    参数量较大，建议用SPPF替代
     """
     def __init__(self, in_channels, out_channels=None, act='relu'):
         super().__init__()
@@ -629,6 +714,9 @@ class HGNetv2(nn.Module):
                  act='relu',
                  use_simam_stages=None,
                  use_sppcspc_stage=-1,
+                 use_sppf_stage=-1,
+                 use_sppflite_stage=-1,
+                 use_sppfmicro_stage=-1,
                  use_c2f_stages=None,
                  c2f_n=1,
                  c2f_e=0.5,
@@ -638,6 +726,12 @@ class HGNetv2(nn.Module):
         super().__init__()
         self.use_lab = use_lab
         self.return_idx = return_idx
+        self.use_simam_stages = use_simam_stages if use_simam_stages is not None else []
+        self.use_sppcspc_stage = use_sppcspc_stage
+        self.use_sppf_stage = use_sppf_stage
+        self.use_sppflite_stage = use_sppflite_stage
+        self.use_sppfmicro_stage = use_sppfmicro_stage
+        self.use_c2f_stages = use_c2f_stages if use_c2f_stages is not None else []
 
         stem_channels = self.arch_configs[name]['stem_channels']
         stage_config = self.arch_configs[name]['stage_config']
@@ -674,9 +768,6 @@ class HGNetv2(nn.Module):
                     act=act)
             )
 
-        self.use_simam_stages = use_simam_stages if use_simam_stages is not None else []
-        self.use_sppcspc_stage = use_sppcspc_stage
-
         self.simam_modules = nn.ModuleList()
         if self.use_simam_stages:
             for stage_idx in self.use_simam_stages:
@@ -691,9 +782,26 @@ class HGNetv2(nn.Module):
             sppcspc_idx = self.use_sppcspc_stage
             out_ch = stage_config[list(stage_config.keys())[sppcspc_idx]][2]
             self.sppcspc_module = SPPCSPC(out_ch, act=act)
+        
+        self.sppf_module = None
+        if self.use_sppf_stage >= 0 and self.use_sppf_stage < len(self.stages):
+            sppf_idx = self.use_sppf_stage
+            out_ch = stage_config[list(stage_config.keys())[sppf_idx]][2]
+            self.sppf_module = SPPF(out_ch, act=act)
+        
+        self.sppflite_module = None
+        if self.use_sppflite_stage >= 0 and self.use_sppflite_stage < len(self.stages):
+            sppflite_idx = self.use_sppflite_stage
+            out_ch = stage_config[list(stage_config.keys())[sppflite_idx]][2]
+            self.sppflite_module = SPPFLite(out_ch, act=act)
+        
+        self.sppfmicro_module = None
+        if self.use_sppfmicro_stage >= 0 and self.use_sppfmicro_stage < len(self.stages):
+            sppfmicro_idx = self.use_sppfmicro_stage
+            out_ch = stage_config[list(stage_config.keys())[sppfmicro_idx]][2]
+            self.sppfmicro_module = SPPFMicro(out_ch, act=act)
 
         self.c2f_modules = nn.ModuleList()
-        self.use_c2f_stages = use_c2f_stages if use_c2f_stages is not None else []
         if self.use_c2f_stages and isinstance(self.use_c2f_stages, list):
             for stage_idx in self.use_c2f_stages:
                 if stage_idx < len(self.stages):
@@ -818,6 +926,12 @@ class HGNetv2(nn.Module):
                 simam_idx += 1
             if idx == self.use_sppcspc_stage and self.sppcspc_module is not None:
                 x = self.sppcspc_module(x)
+            if idx == self.use_sppf_stage and self.sppf_module is not None:
+                x = self.sppf_module(x)
+            if idx == self.use_sppflite_stage and self.sppflite_module is not None:
+                x = self.sppflite_module(x)
+            if idx == self.use_sppfmicro_stage and self.sppfmicro_module is not None:
+                x = self.sppfmicro_module(x)
             if self.use_c2f_stages and idx in self.use_c2f_stages:
                 if c2f_idx < len(self.c2f_modules):
                     x = self.c2f_modules[c2f_idx](x)
