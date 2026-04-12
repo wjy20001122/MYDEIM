@@ -1,0 +1,6 @@
+path: /root/Pest_datasets_v1
+train: train/images
+val: val/images
+
+nc: 4
+names: ['Wheat_aphid','Corn_fall_armyworm_larva','Corn_yellow_stem_borer_larva','Corn_yellow_stem_borer']

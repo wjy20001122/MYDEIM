@@ -1,0 +1,59 @@
+task: detect
+mode: train
+model: yolov8n.pt
+data: /root/MYDEIM/configs/deimv2/pest_yolov8.yaml
+
+epochs: 100
+patience: 50
+batch: 16
+imgsz: 640
+
+optimizer: AdamW
+lr0: 0.00008
+lrf: 0.5
+momentum: 0.9
+weight_decay: 0.0001
+
+warmup_epochs: 3
+warmup_momentum: 0.8
+warmup_bias_lr: 0.00008
+
+hsv_h: 0.015
+hsv_s: 0.7
+hsv_v: 0.4
+degrees: 10.0
+translate: 0.1
+scale: 0.5
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.5
+mosaic: 1.0
+mixup: 0.1
+copy_paste: 0.05
+
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+save: True
+save_period: 10
+cache: True
+device: 0
+workers: 8
+project: ./outputs/yolov8n_pest
+name: exp
+
+exist_ok: False
+pretrained: True
+verbose: True
+seed: 0
+deterministic: True
+single_cls: False
+rect: False
+cos_lr: False
+close_mosaic: 12
+resume: False
+amp: True
+plots: True
+val: True

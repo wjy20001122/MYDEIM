@@ -16,6 +16,10 @@ HGNetv2:
   use_lab: True
   use_simam_stages: [1, 2, 3]
   use_sppcspc_stage: -1
+  use_c2f_stages: [1]
+  c2f_n: 1
+  c2f_e: 0.25
+  c2f_lightweight: True
 
 DEIM:
   backbone: HGNetv2
@@ -42,7 +46,7 @@ DEIMTransformer:
   feat_strides: [8, 16, 32]
   hidden_dim: 112
   num_levels: 3
-  num_points: [4, 4, 2]
+  num_points: [5, 5, 2]
   nhead: 8
 
   num_layers: 3
@@ -52,7 +56,7 @@ DEIMTransformer:
   dim_feedforward: 320
   share_bbox_head: True
   use_gateway: False
-epoches: 84
+epoches: 100
 
 warmup_iter: 1500
 flat_epoch: 60
@@ -80,7 +84,7 @@ optimizer:
 eval_spatial_size: [640, 640]
 
 train_dataloader: 
-  total_batch_size: 12
+  total_batch_size: 16
   dataset: 
     transforms:
       ops:
@@ -98,7 +102,7 @@ train_dataloader:
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
         - {type: ConvertBoxes, fmt: 'cxcywh', normalize: True}
       policy:
-        epoch: [4, 60, 72]
+        epoch: [4, 60, 84]
         ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop', 'GaussianNoise']
       mosaic_prob: 0.5
 
@@ -113,14 +117,14 @@ train_dataloader:
     base_size_repeat: ~
 
 val_dataloader:
-  total_batch_size: 24
+  total_batch_size: 32
   dataset:
     transforms:
       ops:
         - {type: Resize, size: [640, 640]}
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
   shuffle: False
-  num_workers: 16
+  num_workers: 24
 
 DEIMCriterion:
   weight_dict: {loss_mal: 1.0, loss_bbox: 5.0, loss_giou: 2.0, loss_fgl: 0.15, loss_ddf: 1.5}
@@ -135,4 +139,4 @@ DEIMCriterion:
     gamma: 2.0
     change_matcher: True
     iou_order_alpha: 4.0
-    matcher_change_epoch: 70
+    matcher_change_epoch: 72

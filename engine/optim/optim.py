@@ -8,15 +8,17 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 
 from ..core import register
+from .muon import MuSGD
 
 
-__all__ = ['AdamW', 'SGD', 'Adam', 'MultiStepLR', 'CosineAnnealingLR', 'OneCycleLR', 'LambdaLR']
+__all__ = ['AdamW', 'SGD', 'Adam', 'MuSGD', 'MultiStepLR', 'CosineAnnealingLR', 'OneCycleLR', 'LambdaLR']
 
 
 
 SGD = register()(optim.SGD)
 Adam = register()(optim.Adam)
 AdamW = register()(optim.AdamW)
+MuSGD = register()(MuSGD)
 
 
 MultiStepLR = register()(lr_scheduler.MultiStepLR)

@@ -39,6 +39,11 @@ class DEIMCriterion(nn.Module):
         share_matched_indices=False,
         mal_alpha=None,
         use_uni_set=True,
+        use_progloss=False,
+        use_stal=False,
+        stal_T=2.0,
+        stal_alpha=0.5,
+        small_obj_weight=1.0,
         ):
         """Create the criterion.
         Parameters:
@@ -48,6 +53,11 @@ class DEIMCriterion(nn.Module):
             num_classes: number of object categories, omitting the special no-object category.
             reg_max (int): Max number of the discrete bins in D-FINE.
             boxes_weight_format: format for boxes weight (iou, ).
+            use_progloss: enable ProgLoss for small object detection
+            use_stal: enable STAL for self-training augmentation
+            stal_T: temperature for STAL
+            stal_alpha: weight for STAL loss
+            small_obj_weight: additional weight multiplier for small objects
         """
         super().__init__()
         self.num_classes = num_classes
@@ -64,6 +74,11 @@ class DEIMCriterion(nn.Module):
         self.num_pos, self.num_neg = None, None
         self.mal_alpha = mal_alpha
         self.use_uni_set = use_uni_set
+        self.use_progloss = use_progloss
+        self.use_stal = use_stal
+        self.stal_T = stal_T
+        self.stal_alpha = stal_alpha
+        self.small_obj_weight = small_obj_weight
 
     def loss_labels_focal(self, outputs, targets, indices, num_boxes):
         assert 'pred_logits' in outputs
@@ -141,6 +156,94 @@ class DEIMCriterion(nn.Module):
         loss = F.binary_cross_entropy_with_logits(src_logits, target_score, weight=weight, reduction='none')
         loss = loss.mean(1).sum() * src_logits.shape[1] / num_boxes
         return {'loss_mal': loss}
+
+    def loss_prog(self, outputs, targets, indices, num_boxes, values=None):
+        """ProgLoss: Probabilistic Loss for improved small object detection.
+
+        Uses IoU-weighted target scores with focal-like weighting to focus on
+        hard examples and small objects.
+        """
+        assert 'pred_logits' in outputs
+        idx = self._get_src_permutation_idx(indices)
+
+        if values is None:
+            src_boxes = outputs['pred_boxes'][idx]
+            target_boxes = torch.cat([t['boxes'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+            ious, _ = box_iou(box_cxcywh_to_xyxy(src_boxes), box_cxcywh_to_xyxy(target_boxes))
+            ious = torch.diag(ious).detach()
+        else:
+            ious = values
+
+        src_logits = outputs['pred_logits']
+        target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
+        target_classes = torch.full(src_logits.shape[:2], self.num_classes,
+                                    dtype=torch.int64, device=src_logits.device)
+        target_classes[idx] = target_classes_o
+        target = F.one_hot(target_classes, num_classes=self.num_classes + 1)[..., :-1]
+
+        target_score_o = torch.zeros_like(target_classes, dtype=src_logits.dtype)
+        target_score_o[idx] = ious.to(target_score_o.dtype)
+        target_score = target_score_o.unsqueeze(-1) * target
+
+        pred_probs = src_logits.sigmoid().detach()
+        target_score = target_score.pow(self.gamma)
+        weight = self.alpha * pred_probs.pow(self.gamma) * (1 - target) + target_score
+
+        loss = F.binary_cross_entropy_with_logits(src_logits, target_score, weight=weight, reduction='none')
+        loss = loss.mean(1).sum() * src_logits.shape[1] / num_boxes
+        return {'loss_prog': loss}
+
+    def loss_stal(self, outputs, targets, indices, num_boxes):
+        """STAL: Self-Training Augmentation Loss.
+
+        Computes KL divergence between student and teacher (EMA) predictions
+        to encourage consistency, especially beneficial for small objects.
+        """
+        if 'teacher_logits' not in outputs or outputs['teacher_logits'] is None:
+            return {'loss_stal': torch.tensor(0.0, device=next(iter(outputs.values())).device)}
+
+        student_logits = outputs['pred_logits']
+        teacher_logits = outputs['teacher_logits']
+
+        fg_mask = torch.zeros(student_logits.shape[:2], dtype=torch.bool, device=student_logits.device)
+        for i, (_, tgt_idx) in enumerate(indices):
+            fg_mask[i, tgt_idx] = True
+
+        student_probs = F.log_softmax(student_logits / self.stal_T, dim=-1)
+        teacher_probs = F.softmax(teacher_logits.detach() / self.stal_T, dim=-1)
+
+        distillation_loss = F.kl_div(student_probs, teacher_probs, reduction='none').sum(-1)
+
+        if fg_mask.any():
+            distillation_loss = distillation_loss[fg_mask]
+
+        loss = distillation_loss.mean() * (self.stal_T ** 2)
+        return {'loss_stal': self.stal_alpha * loss}
+
+    def loss_small_obj(self, outputs, targets, indices, num_boxes, base_loss_dict):
+        """Small object enhanced loss weighting.
+
+        Applies additional weight multiplier for predictions corresponding to
+        small objects (box area < threshold).
+        """
+        if self.small_obj_weight <= 1.0:
+            return base_loss_dict
+
+        idx = self._get_src_permutation_idx(indices)
+        target_boxes = torch.cat([t['boxes'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        box_sizes = (target_boxes[..., 2] * target_boxes[..., 3]).clamp(min=1)
+
+        size_threshold = 32 * 32
+        small_mask = box_sizes < size_threshold
+
+        if small_mask.any():
+            weight_factor = self.small_obj_weight
+            for k in base_loss_dict:
+                if 'loss_bbox' in k or 'loss_giou' in k:
+                    loss = base_loss_dict[k]
+                    base_loss_dict[k] = loss * weight_factor
+
+        return base_loss_dict
 
     def loss_boxes(self, outputs, targets, indices, num_boxes, boxes_weight=None):
         """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
@@ -259,6 +362,8 @@ class DEIMCriterion(nn.Module):
             'vfl': self.loss_labels_vfl,
             'mal': self.loss_labels_mal,
             'local': self.loss_local,
+            'prog': self.loss_prog,
+            'stal': self.loss_stal,
         }
         assert loss in loss_map, f'do you really want to compute {loss} loss?'
         return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
@@ -317,6 +422,9 @@ class DEIMCriterion(nn.Module):
             l_dict = self.get_loss(loss, outputs, targets, indices_in, num_boxes_in, **meta)
             l_dict = {k: l_dict[k] * self.weight_dict[k] for k in l_dict if k in self.weight_dict}
             losses.update(l_dict)
+
+        if self.use_progloss or self.use_stal:
+            losses = self.loss_small_obj(outputs, targets, indices, num_boxes, losses)
 
         # In case of auxiliary losses, we repeat this process with the output of each intermediate layer.
         if 'aux_outputs' in outputs:
